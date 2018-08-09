@@ -6,13 +6,13 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="http://robertleeng.com">
-  <title>Robert Lee</title>
+  <title>Archives: 2018/8 | Robert Lee</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="description" content="Robert Lee的博客">
 <meta name="keywords" content="blogs">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Robert Lee">
-<meta property="og:url" content="http://robertleeng.com/index.html">
+<meta property="og:url" content="http://robertleeng.com/archives/2018/08/index.html">
 <meta property="og:site_name" content="Robert Lee">
 <meta property="og:description" content="Robert Lee的博客">
 <meta property="og:locale" content="zh-Hans">
@@ -160,225 +160,47 @@
           <div id="js-content" class="content-ll">
             
   
-    <article id="post-下拉图片变大" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
+  
     
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/08/10/下拉图片变大/">iOS开发个人中心下拉图片变大</a>
-    </h1>
-  
-
-        
-        <a href="/2018/08/10/下拉图片变大/" class="archive-article-date">
+    
+      
+      
+      <section class="archives-wrap">
+        <div class="archive-year-wrap">
+          <a href="/archives/2018" class="archive-year">2018</a>
+        </div>
+        <div class="archives">
+    
+    <article class="archive-article archive-type-post">
+  <div class="archive-article-inner">
+    <header class="archive-article-header">
+      	<div class="article-meta">
+	      	<a href="/2018/08/10/下拉图片变大/" class="archive-article-date">
   	<time datetime="2018-08-09T16:10:41.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-08-10</time>
 </a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h3 id="iOS开发中图片随便用户的拖拽而变大"><a href="#iOS开发中图片随便用户的拖拽而变大" class="headerlink" title="iOS开发中图片随便用户的拖拽而变大"></a>iOS开发中图片随便用户的拖拽而变大</h3><p>首先先上图看效果，因为不会上传GIF图索，所以只截了个图。在以后开发中也可以使用这种思想。<br><img src="/img/下拉图片变大.png" alt="截图"></p>
-<p>如图所示：用户下来的时候图片有一种放大的感觉，在个人中心使用这种情景比较多。</p>
-<h3 id="实现过程"><a href="#实现过程" class="headerlink" title="实现过程"></a>实现过程</h3><hr>
-<ul>
-<li><p>1、一般的<code>ViewController</code>都会被封装在<code>UINavigationController</code>之下，所以我们首先应该把<code>navigationBar</code>给隐藏了。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">self.navigationController.navigationBar.hidden = YES;</span><br><span class="line">//设置状态栏的字体为白色 iOS7之后</span><br><span class="line">[UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2、配置<code>TableView/CollectionView</code>等，设置代理，正常情况下需要设置<code>tableView</code>的<code>contentInset</code>。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_tableView.contentInset = UIEdgeInsetsMake(imageView。height, 0, 0, 0);</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>3、配置<code>UIImageView</code>，在设置<code>imageView</code>的时候把<code>contentMode</code>设置成<code>UIViewContentModeScaleAspectFill</code>,然后把需要的视图添加到主视图中。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_header.contentMode = UIViewContentModeScaleAspectFill;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>4、实现<code>UIScrollViewDelegate</code>中的<code>scrollViewDidScroll</code>方法，通过监听用户的滑动来控制图片的位置和大小。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">CGRect frame = self.header.frame;</span><br><span class="line">CGFloat offsetY = scrollView.contentOffset.y;</span><br><span class="line">NSLog(@<span class="string">"%lf"</span>,offsetY);</span><br><span class="line"><span class="keyword">if</span> (offsetY &lt;= -264) &#123;</span><br><span class="line">frame.size.height = -offsetY;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">frame.origin.y = -264 - offsetY;</span><br><span class="line">&#125;</span><br><span class="line">self.header.frame = frame;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<hr>
-<p>这个就是主要过程，只是简单的demo，布局就使用的绝对布局，大致思路就是如此。</p>
-<h3 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h3><p>在设置状态栏<code>statusBar</code>的时候，使用上面的代码的时候没有效果，在查询完之后才发现需要在项目的<code>Info.plist</code>中添加一个属性<code>View controller-based status bar appearance</code>这个属性默认是<code>YES</code>,当你设置为<code>NO</code>的时候状态栏就可以改变了。<br><img src="/img/设置InfoPlist.png" alt="设置plist中的属性"></p>
-<h1 id="To-Be-a-Confident-Man"><a href="#To-Be-a-Confident-Man" class="headerlink" title="To Be a Confident Man!"></a>To Be a Confident Man!</h1>
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/08/10/下拉图片变大/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
         </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-    <article id="post-我的博客" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
-    
-      <header class="article-header">
-        
+    	 
   
     <h1 itemprop="name">
-      <a class="article-title" href="/2018/07/30/我的博客/">我的博客</a>
+      <a class="archive-article-title" href="/2018/08/10/下拉图片变大/">iOS开发个人中心下拉图片变大</a>
     </h1>
   
 
-        
-        <a href="/2018/07/30/我的博客/" class="archive-article-date">
-  	<time datetime="2018-07-30T14:37:52.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-07-30</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <h2 id="首先"><a href="#首先" class="headerlink" title="首先"></a>首先</h2><p>历经了千辛万苦终于把自己的博客给搭建好了，本来想从阿里云上面买个服务器的，看了一下价格，我的钱包不允许我这样做，哈哈哈哈。</p>
-<h3 id="然后"><a href="#然后" class="headerlink" title="然后"></a>然后</h3><p>搭建博客非常感谢前辈们的blog,让我一步步搭建完成，首先推荐这位大佬的blog，<a href="https://www.cnblogs.com/jackyroc/p/7681938.html" target="_blank" rel="noopener">搭建个人博客</a></p>
-<h4 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h4><p>就到这吧。最近在学weex,有时间写点关于weex的文章。</p>
+        <div class="article-info info-on-right">
+          
+          
 
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/07/30/我的博客/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
+        </div>
+        <div class="clearfix"></div>
+    </header>
   </div>
 </article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
   
-    <article id="post-hello-world" class="article article-type-post  article-index" itemscope itemprop="blogPost">
-  <div class="article-inner">
+  
+    </div></section>
+  
+
     
-      <header class="article-header">
-        
-  
-    <h1 itemprop="name">
-      <a class="article-title" href="/2018/07/26/hello-world/">Hello World</a>
-    </h1>
-  
-
-        
-        <a href="/2018/07/26/hello-world/" class="archive-article-date">
-  	<time datetime="2018-07-26T15:07:57.667Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-07-26</time>
-</a>
-        
-      </header>
-    
-    <div class="article-entry" itemprop="articleBody">
-      
-        <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
-
-      
-
-      
-    </div>
-    <div class="article-info article-info-index">
-      
-      
-      
-
-      
-        <p class="article-more-link">
-          <a class="article-more-a" href="/2018/07/26/hello-world/">展开全文 >></a>
-        </p>
-      
-
-      
-      <div class="clearfix"></div>
-    </div>
-  </div>
-</article>
-
-<aside class="wrap-side-operation">
-    <div class="mod-side-operation">
-        
-        <div class="jump-container" id="js-jump-container" style="display:none;">
-            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
-                <i class="icon-font icon-back"></i>
-            </a>
-            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
-                <i class="icon-font icon-plane jump-plane"></i>
-            </div>
-        </div>
-        
-        
-    </div>
-</aside>
-
-
-
-
-  
-  
 
 
           </div>
@@ -400,9 +222,9 @@
     <script>
 	var yiliaConfig = {
 		mathjax: false,
-		isHome: true,
+		isHome: false,
 		isPost: false,
-		isArchive: false,
+		isArchive: true,
 		isTag: false,
 		isCategory: false,
 		open_in_new: false,
