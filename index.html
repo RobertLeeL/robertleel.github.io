@@ -160,6 +160,131 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-学习KVO" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/12/13/学习KVO/">学习KVO</a>
+    </h1>
+  
+
+        
+        <a href="/2018/12/13/学习KVO/" class="archive-article-date">
+  	<time datetime="2018-12-13T13:03:11.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-13</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>KVO（Key-Value-Observing）——观察者模式，当被观察的对象的某个属性发生变化时，观察者对象会获得通知，</p>
+<p>内部实现原理</p>
+<ul>
+<li>KVO是基于runtime机制实现的</li>
+<li>当某个类的属性被第一次观察时，系统会在运行时创建该类的一个派生类，（如Animal类，会生成一个NSKVONotifying_Animal),在该派生类中重写基类中被观察属性的setter方法，在setter方法中实现真正的通知机制</li>
+<li>在runtime中，每个类都有个isa指针，指向当前类，当某个类被观察时，系统会把isa指针指向动态生成的派生类，从而监听的属性的setter方法会被执行</li>
+</ul>
+<p>注册观察者：</p>
+<pre><code>/*observer : 观察的对象
+*keyPath : 被观察对象的属性
+*options : 给你观察键值变化的选择，一遍选择新值和旧值
+*/context : 传输你需要的数据
+- (void)addObserver:(NSObject *)observer forKeyPath:(NSString *)keyPath options:(NSKeyValueObservingOptions)options context:(nullable void *)context;
+</code></pre><p>实现方法：</p>
+<pre><code>//keyPath : 监听的属性
+//change : 属性的变化值
+//context : 上文传的数据
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary&lt;NSKeyValueChangeKey,id&gt; *)change context:(void *)context;
+</code></pre><p>移除</p>
+<pre><code>- (void)removeObserver:(NSObject *)observer forKeyPath:(NSString *)keyPath;
+//监听玩属性后，一定要把观察者给移除，不然可能导致内存泄漏
+</code></pre><p>因为Objc是一门动态语言，把一些工作从编译连接推迟到运行时，所以会有一个运行时系统（runtime system）来执行编译后的代码。它是整个Objc运行框架的一块基石。<a href="http://yulingtianxia.com/blog/2014/11/05/objective-c-runtime/" target="_blank" rel="noopener">runtime</a></p>
+<p><a href="http://tech.glowing.com/cn/implement-kvo/" target="_blank" rel="noopener">如何手动实现KVO</a></p>
+<p>KVC（Key-Value-Coding) 运用了一个isa-swizzling技术.isa-siwizzling就是类型混合指正机制，将两个对象的isa指针相互调换，就是俗称的黑魔法。</p>
+<p>KVC使用</p>
+<ul>
+<li>获取值</li>
+</ul>
+<hr>
+<pre><code>valueForKey: 传入NSString属性的名字。
+
+valueForKeyPath: 属性的路径，xx.xx
+
+valueForUndefinedKey 默认实现是抛出异常，可重写这个函数做错误处理
+</code></pre><ul>
+<li>修改值</li>
+</ul>
+<hr>
+<pre><code>setValue:forKey:
+
+setValue:forKeyPath:
+
+setValue:forUnderfinedKey:
+
+setNilValueForKey: 对非类对象属性设置nil时调用，默认抛出异常。
+</code></pre><h2 id="搜索单值成员"><a href="#搜索单值成员" class="headerlink" title="搜索单值成员"></a>搜索单值成员</h2><ul>
+<li>setValue:forKey:搜索方式</li>
+</ul>
+<ul>
+<li>1、首先搜索setKey:方法。（key指成员变量名，首字母大写）</li>
+<li>2、上面的setter方法没找到，如果类方法accessInstanceVariablesDirectly返回YES。那么按 _key，_isKey，key，iskey的顺序搜索成员名。（NSKeyValueCodingCatogery中实现的类方法，默认实现为返回YES）</li>
+<li>3、如果没有找到成员变量，调用setValue:forUnderfinedKey:</li>
+</ul>
+<p>valueForKey:的搜索方式</p>
+<ul>
+<li>1、首先按getKey，key，isKey的顺序查找getter方法，找到直接调用。如果是BOOL、int等内建值类型，会做NSNumber的转换。</li>
+<li>2、上面的getter没找到，查找countOfKey、objectInKeyAtindex、KeyAtindexes格式的方法。如果countOfKey和另外两个方法中的一个找到，那么就会返回一个可以响应NSArray所有方法的代理集合的NSArray消息方法。</li>
+<li><p>3、还没找到，查找countOfKey、enumeratorOfKey、memberOfKey格式的方法。如果这三个方法都找到，那么就返回一个可以响应NSSet所有方法的代理集合。</p>
+</li>
+<li><p>4、还是没找到，如果类方法accessInstanceVariablesDirectly返回YES。那么按 _key，_isKey，key，iskey的顺序搜索成员名。</p>
+</li>
+<li>5、再没找到，调用valueForUndefinedKey。</li>
+</ul>
+
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/12/13/学习KVO/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-markdown语法" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
