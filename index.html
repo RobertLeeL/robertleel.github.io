@@ -359,7 +359,48 @@ YYKVStorageTypeMixed = 2,
 - (void)removeObjectForKey:(NSString *)key;
 //删除所有缓存
 - (void)removeAllObjects;
-</code></pre>
+</code></pre><ul>
+<li>我们一个方法一个方法看是如何实现的</li>
+</ul>
+<pre><code>//判断是否存在缓存 调用的是_kv（YYKVStorage）中的方法
+//Lock 是pthread_mutex 线程锁（互斥锁）来确保线程安全
+- (BOOL)containsObjectForKey:(NSString *)key {
+if (!key) return NO;
+Lock();
+BOOL contains = [_kv itemExistsForKey:key];
+Unlock();
+return contains;
+}
+
+/*根据key获取缓存，也是调用_kv的方法
+*具体过程就不一一介绍了。
+*/
+- (id&lt;NSCoding&gt;)objectForKey:(NSString *)key {
+if (!key) return nil;
+Lock();
+YYKVStorageItem *item = [_kv getItemForKey:key];
+Unlock();
+if (!item.value) return nil;
+
+id object = nil;
+if (_customUnarchiveBlock) {
+    object = _customUnarchiveBlock(item.value);
+} else {
+    @try {
+        object = [NSKeyedUnarchiver unarchiveObjectWithData:item.value];
+    }
+    @catch (NSException *exception) {
+        // nothing to do...
+    }
+}
+if (object &amp;&amp; item.extendedData) {
+    [YYDiskCache setExtendedData:item.extendedData toObject:object];
+}
+return object;
+}
+</code></pre><p>其他的方法，都是调用_kv(YYKVStorage)类中的方法进行缓存操作，所以接下来我们直接介绍<code>YYKVStorage</code>的实现过程。</p>
+<hr>
+<h5 id="YYKVStorage实现过程"><a href="#YYKVStorage实现过程" class="headerlink" title="YYKVStorage实现过程"></a>YYKVStorage实现过程</h5>
       
 
       

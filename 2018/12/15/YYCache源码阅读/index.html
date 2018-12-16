@@ -17,7 +17,7 @@
 <meta property="og:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/YYCache类.png">
-<meta property="og:updated_time" content="2018-12-16T16:29:16.032Z">
+<meta property="og:updated_time" content="2018-12-16T16:58:41.932Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="YYCache源码阅读">
 <meta name="twitter:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
@@ -298,7 +298,48 @@ YYKVStorageTypeMixed = 2,
 - (void)removeObjectForKey:(NSString *)key;
 //删除所有缓存
 - (void)removeAllObjects;
-</code></pre>
+</code></pre><ul>
+<li>我们一个方法一个方法看是如何实现的</li>
+</ul>
+<pre><code>//判断是否存在缓存 调用的是_kv（YYKVStorage）中的方法
+//Lock 是pthread_mutex 线程锁（互斥锁）来确保线程安全
+- (BOOL)containsObjectForKey:(NSString *)key {
+if (!key) return NO;
+Lock();
+BOOL contains = [_kv itemExistsForKey:key];
+Unlock();
+return contains;
+}
+
+/*根据key获取缓存，也是调用_kv的方法
+*具体过程就不一一介绍了。
+*/
+- (id&lt;NSCoding&gt;)objectForKey:(NSString *)key {
+if (!key) return nil;
+Lock();
+YYKVStorageItem *item = [_kv getItemForKey:key];
+Unlock();
+if (!item.value) return nil;
+
+id object = nil;
+if (_customUnarchiveBlock) {
+    object = _customUnarchiveBlock(item.value);
+} else {
+    @try {
+        object = [NSKeyedUnarchiver unarchiveObjectWithData:item.value];
+    }
+    @catch (NSException *exception) {
+        // nothing to do...
+    }
+}
+if (object &amp;&amp; item.extendedData) {
+    [YYDiskCache setExtendedData:item.extendedData toObject:object];
+}
+return object;
+}
+</code></pre><p>其他的方法，都是调用_kv(YYKVStorage)类中的方法进行缓存操作，所以接下来我们直接介绍<code>YYKVStorage</code>的实现过程。</p>
+<hr>
+<h5 id="YYKVStorage实现过程"><a href="#YYKVStorage实现过程" class="headerlink" title="YYKVStorage实现过程"></a>YYKVStorage实现过程</h5>
       
 
       
