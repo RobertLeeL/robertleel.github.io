@@ -8,19 +8,19 @@
   <link rel="dns-prefetch" href="http://robertleeng.com">
   <title>YYCache源码阅读 | Robert Lee</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache包含的类  YYCache  提供了最外层的接口，调用YYMemoryCache和YYDiskCache中的方法，进行缓">
+  <meta name="description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
 <meta name="keywords" content="blogs">
 <meta property="og:type" content="article">
 <meta property="og:title" content="YYCache源码阅读">
 <meta property="og:url" content="http://robertleeng.com/2018/12/15/YYCache源码阅读/index.html">
 <meta property="og:site_name" content="Robert Lee">
-<meta property="og:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache包含的类  YYCache  提供了最外层的接口，调用YYMemoryCache和YYDiskCache中的方法，进行缓">
+<meta property="og:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/YYCache类.png">
-<meta property="og:updated_time" content="2018-12-15T13:06:07.524Z">
+<meta property="og:updated_time" content="2018-12-16T08:50:28.234Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="YYCache源码阅读">
-<meta name="twitter:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache包含的类  YYCache  提供了最外层的接口，调用YYMemoryCache和YYDiskCache中的方法，进行缓">
+<meta name="twitter:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
 <meta name="twitter:image" content="http://robertleeng.com/img/YYCache类.png">
   
     <link rel="alternative" href="/atom.xml" title="Robert Lee" type="application/atom+xml">
@@ -182,15 +182,33 @@
     <div class="article-entry" itemprop="articleBody">
       
         <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>&#160;&#160;&#160;&#160;最近在看缓存相关知识，所以就阅读了<a href="https://github.com/ibireme/YYCache" target="_blank" rel="noopener">YYCache</a>源码，<code>YYCache</code>是<a href="https://blog.ibireme.com/" target="_blank" rel="noopener">ibireme</a>开源的一个线程安全的高性能缓存框架。YYCache设计思路，在<a href="https://blog.ibireme.com/2015/10/26/yycache/" target="_blank" rel="noopener">YYCache设计思路</a>大佬博客中也有提到，感兴趣的可以去膜拜一波。</p>
+<h3 id="YYCache使用"><a href="#YYCache使用" class="headerlink" title="YYCache使用"></a>YYCache使用</h3><p>&#160;&#160;<code>YYCache</code>提供了同步和异步的方式进行数据存储，</p>
+<pre><code>NSString *url = @&quot;https://www.baidu.com&quot;;
+NSString *key = @&quot;cacheKey&quot;;
+
+//初始化
+YCache *cache = [YYCache cacheWithName:@&quot;cacheTest&quot;];
+//同步方法
+//异步方法
+[cache setObject:url forKey:key withBlock:^{
+}];
+//判断缓存中，是否存在key值key得value
+BOOL result = [cache containsObjectForKey:key];
+//判断缓存中，是否存在key值key得value,bolck回调
+[cache containsObjectForKey:key withBlock:^(NSString * _Nonnull key, BOOL contains) {
+
+}];
+//根据key移除缓存
+[cache removeObjectForKey:key];
+//...还有带block回调的移除f缓存方法，还有移除所有缓存，带进度和结束block的方法，在这里就不一一介绍了。
+</code></pre><hr>
 <h3 id="YYCache包含的类"><a href="#YYCache包含的类" class="headerlink" title="YYCache包含的类"></a>YYCache包含的类</h3><p><img src="/img/YYCache类.png" alt="类图"></p>
 <ul>
 <li><code>YYCache</code>  提供了最外层的接口，调用<code>YYMemoryCache</code>和<code>YYDiskCache</code>中的方法，进行缓存、查询、删除等操作。</li>
 <li><code>YYMemoryCache</code> 内存缓存，负责容量比较小的内存，线程安全。类中使用<code>_YYLinkedMap</code>双向链表和<code>_YYLinkedMapNode</code>结点进行存储。该存储方法不支持异步存储。</li>
-<li><code>YYDiskCache</code> 磁盘存储，负责处理容量大，相对低速的磁盘缓存。在该类中，当存储对象（默认）小于20kb的时候直接存储在文件中，当大于20kb的时候，存储对象当回存储在SQLite中。<code>YYKVStorage</code>是磁盘存储的底层实现类，该存储支持异步存储。<h3 id="YYCache使用"><a href="#YYCache使用" class="headerlink" title="YYCache使用"></a>YYCache使用</h3>&#160;&#160;<code>YYCache</code>提供了同步和异步的方式进行数据存储，</li>
+<li><code>YYDiskCache</code> 磁盘存储，负责处理容量大，相对低速的磁盘缓存。在该类中，当存储对象（默认）小于20kb的时候直接存储在文件中，当大于20kb的时候，存储对象当回存储在SQLite中。<code>YYKVStorage</code>是磁盘存储的底层实现类，该存储支持异步存储。</li>
 </ul>
-<h5 id="同步"><a href="#同步" class="headerlink" title="同步"></a>同步</h5><pre><code>- (void)setObject:(nullable id&lt;NSCoding&gt;)object forKey:(NSString *)key;
-</code></pre><h5 id="异步"><a href="#异步" class="headerlink" title="异步"></a>异步</h5><pre><code>- (void)setObject:(nullable id&lt;NSCoding&gt;)object forKey:(NSString *)key withBlock:(nullable void(^)(void))block;
-</code></pre>
+
       
 
       
