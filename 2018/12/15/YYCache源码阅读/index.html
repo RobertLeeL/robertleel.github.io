@@ -17,7 +17,7 @@
 <meta property="og:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/YYCache类.png">
-<meta property="og:updated_time" content="2018-12-16T08:50:28.234Z">
+<meta property="og:updated_time" content="2018-12-16T09:34:59.547Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="YYCache源码阅读">
 <meta name="twitter:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
@@ -208,7 +208,38 @@ BOOL result = [cache containsObjectForKey:key];
 <li><code>YYMemoryCache</code> 内存缓存，负责容量比较小的内存，线程安全。类中使用<code>_YYLinkedMap</code>双向链表和<code>_YYLinkedMapNode</code>结点进行存储。该存储方法不支持异步存储。</li>
 <li><code>YYDiskCache</code> 磁盘存储，负责处理容量大，相对低速的磁盘缓存。在该类中，当存储对象（默认）小于20kb的时候直接存储在文件中，当大于20kb的时候，存储对象当回存储在SQLite中。<code>YYKVStorage</code>是磁盘存储的底层实现类，该存储支持异步存储。</li>
 </ul>
+<h3 id="YYCache"><a href="#YYCache" class="headerlink" title="YYCache"></a>YYCache</h3><p>&#160;&#160;&#160;&#160;<code>YYCache</code>给使用者提供了缓存操作接口。接口实现的方式都是通过调用<code>YYMemoryCache</code>和<code>YYDiskCache</code>中的方法进行缓存操作。</p>
+<h4 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h4><pre><code>//初始化方法中，也初始化了YYDiskCache和YYMemoryCache
+- (instancetype)initWithPath:(NSString *)path {
+    if (path.length == 0) return nil;
+    YYDiskCache *diskCache = [[YYDiskCache alloc] initWithPath:path];
+    if (!diskCache) return nil;
+    NSString *name = [path lastPathComponent];
+    YYMemoryCache *memoryCache = [YYMemoryCache new];
+    memoryCache.name = name;
 
+    self = [super init];
+    _name = name;
+    _diskCache = diskCache;
+    _memoryCache = memoryCache;
+    return self;
+}
+
+
+//设置缓存，调用的是_memoryCache和_diskCache中的方法
+- (void)setObject:(id&lt;NSCoding&gt;)object forKey:(NSString *)key {
+[_memoryCache setObject:object forKey:key];
+[_diskCache setObject:object forKey:key];
+}
+
+//先移除内存缓存 再移除磁盘缓存
+- (void)removeAllObjects {
+[_memoryCache removeAllObjects];
+[_diskCache removeAllObjects];
+}
+</code></pre><p>&#160;&#160;&#160;&#160;这些都不需要过多解释了，接下来我们看一下<code>YYDiskCache</code>和<code>YYMemoryCache</code>源码。</p>
+<hr>
+<h3 id="YYDiskCache"><a href="#YYDiskCache" class="headerlink" title="YYDiskCache"></a>YYDiskCache</h3>
       
 
       
@@ -300,6 +331,15 @@ BOOL result = [cache containsObjectForKey:key];
 
   
 <nav id="article-nav">
+  
+    <a href="/2018/12/16/YYImage源码阅读/" id="article-nav-newer" class="article-nav-link-wrap">
+      <i class="icon-circle-left"></i>
+      <div class="article-nav-title">
+        
+          YYImage源码阅读
+        
+      </div>
+    </a>
   
   
     <a href="/2018/12/13/学习KVO/" id="article-nav-older" class="article-nav-link-wrap">
