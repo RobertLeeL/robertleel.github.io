@@ -300,7 +300,66 @@ BOOL result = [cache containsObjectForKey:key];
 }
 </code></pre><p>&#160;&#160;&#160;&#160;这些都不需要过多解释了，接下来我们看一下<code>YYDiskCache</code>和<code>YYMemoryCache</code>源码。</p>
 <hr>
-<h3 id="YYDiskCache"><a href="#YYDiskCache" class="headerlink" title="YYDiskCache"></a>YYDiskCache</h3>
+<h3 id="YYDiskCache"><a href="#YYDiskCache" class="headerlink" title="YYDiskCache"></a>YYDiskCache</h3><ul>
+<li><code>YYDiskCache</code>实现了LRU算法来清理缓存</li>
+<li>间接通过<code>YYKVStorage</code>这个类操作缓存</li>
+<li>支持cost(缓存总花销)、count(缓存总量)、age(缓存时间)、size(磁盘容量)等四种维度进行缓存。通过设置这四个属性来限制缓存。</li>
+</ul>
+<pre><code>@property NSUInteger countLimit;
+
+/**
+The maximum total cost that the cache can holdbefore it starts evicting objects.
+*/
+@property NSUInteger costLimit;
+
+/**
+The maximum expiry time of objects in cache.
+*/
+@property NSTimeInterval ageLimit;
+
+/**
+The minimum free disk space (in bytes) which the cache should kept.
+*/
+@property NSUInteger freeDiskSpaceLimit;
+</code></pre><ul>
+<li>存储方式有三种，第一种是以文件的形式存储，第二种是数据库、第三种是文件+数据库</li>
+</ul>
+<pre><code>typedef NS_ENUM(NSUInteger, YYKVStorageType) {
+
+/// The `value` is stored as a file in file system.
+YYKVStorageTypeFile = 0,
+
+/// The `value` is stored in sqlite with blob type.
+YYKVStorageTypeSQLite = 1,
+
+/// The `value` is stored in file system or sqlite based on your choice.
+YYKVStorageTypeMixed = 2,
+};
+</code></pre><p>&#160;&#160;&#160;&#160;<code>YYDiskCache</code>初始化和使用方法基本上和<code>YYCache</code>保持一致。缓存过程通过<code>YYKVStorage</code>类实现。</p>
+<hr>
+<h4 id="YYKVStorage"><a href="#YYKVStorage" class="headerlink" title="YYKVStorage"></a>YYKVStorage</h4><p>&#160;&#160;&#160;&#160;<code>YYKVStorage</code>将缓存文件分装成<code>YYKVStorageItem</code>类，它保存了缓存所对应的一些信息。</p>
+<h5 id="YYKVStorageItem"><a href="#YYKVStorageItem" class="headerlink" title="YYKVStorageItem"></a>YYKVStorageItem</h5><pre><code>@property (nonatomic, strong) NSString *key;                ///&lt; key
+@property (nonatomic, strong) NSData *value;                ///&lt; value
+@property (nullable, nonatomic, strong) NSString *filename; ///&lt; filename (nil if inline)
+@property (nonatomic) int size;                             ///&lt; value&apos;s size in bytes
+@property (nonatomic) int modTime;                          ///&lt; modification unix timestamp
+@property (nonatomic) int accessTime;                       ///&lt; last access unix timestamp
+@property (nullable, nonatomic, strong) NSData *extendedData; ///&lt; extended data (nil if no extended data)
+</code></pre><p>&#160;&#160;&#160;&#160;<code>YYKVStorageItem</code>属性中包含了缓存的key、value、文件名、大小、添加时间、最后访问时间、扩展文件信息。就是因为有最后访问时间所以在<code>YYKVStorage</code>类中实现了LRU算法，进行缓存。</p>
+<hr>
+<h6 id="接下来让我们看看YYDiskCache是如何实现缓存的添加、删除、和读取的。"><a href="#接下来让我们看看YYDiskCache是如何实现缓存的添加、删除、和读取的。" class="headerlink" title="接下来让我们看看YYDiskCache是如何实现缓存的添加、删除、和读取的。"></a>接下来让我们看看<code>YYDiskCache</code>是如何实现缓存的添加、删除、和读取的。</h6><p>在<code>YYDiskCache</code>中有这些方法进行操作缓存:</p>
+<pre><code>//下面只列举了没有回调的方法，有回调的方法就没有列举出来
+//根据key判断缓存是否存在
+- (BOOL)containsObjectForKey:(NSString *)key;
+//根据key获取缓存
+- (nullable id&lt;NSCoding&gt;)objectForKey:(NSString *)key;
+//根据key增加缓存
+- (void)setObject:(nullable id&lt;NSCoding&gt;)object forKey:(NSString *)key;
+//根据key删除缓存
+- (void)removeObjectForKey:(NSString *)key;
+//删除所有缓存
+- (void)removeAllObjects;
+</code></pre>
       
 
       
