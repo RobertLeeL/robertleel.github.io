@@ -400,7 +400,69 @@ return object;
 }
 </code></pre><p>其他的方法，都是调用_kv(YYKVStorage)类中的方法进行缓存操作，所以接下来我们直接介绍<code>YYKVStorage</code>的实现过程。</p>
 <hr>
-<h5 id="YYKVStorage实现过程"><a href="#YYKVStorage实现过程" class="headerlink" title="YYKVStorage实现过程"></a>YYKVStorage实现过程</h5>
+<h5 id="YYKVStorage实现过程"><a href="#YYKVStorage实现过程" class="headerlink" title="YYKVStorage实现过程"></a>YYKVStorage实现过程</h5><p>&#160;&#160;&#160;&#160;先看<code>YYKVStorage</code>类接口文件中提供的方法： 只列举几个方法，其他的方法都会调用以下方法进行实现。</p>
+<pre><code>//保存或者更新缓存文件
+- (BOOL)saveItemWithKey:(NSString *)key
+                  value:(NSData *)value
+               filename:(nullable NSString *)filename
+           extendedData:(nullable NSData *)extendedData;
+
+//根据key删除缓存
+- (BOOL)removeItemForKey:(NSString *)key;
+//根据keys删除缓存
+- (BOOL)removeItemForKeys:(NSArray&lt;NSString *&gt; *)keys;
+//删除大小大于size的缓存
+- (BOOL)removeItemsLargerThanSize:(int)size;
+//删除在time之前没用到得缓存
+- (BOOL)removeItemsEarlierThanTime:(int)time;
+//删除缓存到maxSize之下，运用LRU算法
+- (BOOL)removeItemsToFitSize:(int)maxSize;
+//删除缓存到maxcount之下，运用LRU算法
+- (BOOL)removeItemsToFitCount:(int)maxCount;
+
+///下面三个方法是更加key获取缓存
+- (nullable YYKVStorageItem *)getItemForKey:(NSString *)key;
+- (nullable YYKVStorageItem *)getItemInfoForKey:(NSString *)key;
+
+- (nullable NSData *)getItemValueForKey:(NSString *)key;
+
+//根据key判断缓存是否存在
+- (BOOL)itemExistsForKey:(NSString *)key;
+</code></pre><ul>
+<li>首先我们看一下是<code>YYKVStorage</code>如何保存缓存。</li>
+</ul>
+<pre><code>- (BOOL)saveItemWithKey:(NSString *)key value:(NSData *)value filename:(NSString *)filename extendedData:(NSData *)extendedData {
+    if (key.length == 0 || value.length == 0) return NO;
+    if (_type == YYKVStorageTypeFile &amp;&amp; filename.length == 0) {
+        return NO;
+    }
+
+    if (filename.length) {
+        if (![self _fileWriteWithName:filename data:value]) {
+            return NO;
+        }
+        if (![self _dbSaveWithKey:key value:value fileName:filename extendedData:extendedData]) {
+            [self _fileDeleteWithName:filename];
+            return NO;
+        }
+        return YES;
+    } else {
+        if (_type != YYKVStorageTypeSQLite) {
+            NSString *filename = [self _dbGetFilenameWithKey:key];
+            if (filename) {
+                [self _fileDeleteWithName:filename];
+            }
+        }
+        return [self _dbSaveWithKey:key value:value fileName:nil extendedData:extendedData];
+    }
+}
+</code></pre><blockquote>
+<blockquote>
+<p>1、判断key和value是否等于nil，如果等于nil返回失败，不为空继续下一步。<br>2、如果磁盘存储为文件存储方式而且文件名为空的情况下，返回失败，否则进行下一步。<br>3、判断文件名长度，如果存在 先把数据进行文件缓存，再进行元数据数据库缓存。<br>4、如果文件名不存在，判断存储方式如果不是数据库存储，则查找出文件名进行删除。<br>5、把元数据和value存入数据库中。</p>
+</blockquote>
+</blockquote>
+<hr>
+
       
 
       
