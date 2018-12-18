@@ -17,7 +17,7 @@
 <meta property="og:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/YYCache类.png">
-<meta property="og:updated_time" content="2018-12-18T15:02:07.374Z">
+<meta property="og:updated_time" content="2018-12-18T15:24:47.913Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="YYCache源码阅读">
 <meta name="twitter:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
@@ -539,7 +539,47 @@ return [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
 </code></pre><p>这个方法是根据最大缓存大小进行缓存的清理，首先根据LRU算法找到items，剩余的缓存大小小于最大缓存，然后根据Key和FileName，把items从文件和数据库中删除。</p>
 <p>具体如何从数据库中获取Item就不详细介绍了。这就是磁盘存储过程。</p>
 <hr>
-<h3 id="YYMemoryCache"><a href="#YYMemoryCache" class="headerlink" title="YYMemoryCache"></a>YYMemoryCache</h3>
+<h3 id="YYMemoryCache"><a href="#YYMemoryCache" class="headerlink" title="YYMemoryCache"></a>YYMemoryCache</h3><ul>
+<li><code>YYMemoryCache</code>也实现了LRU算法来清理缓存。</li>
+<li>支持cost(缓存总花销)、count(缓存总量)、age(缓存时间)三种维度进行缓存。通过设置这三个属性来限制缓存。</li>
+</ul>
+<p><code>YYMemoryCache</code>是如何实现内存缓存、LRU算法的呢？让我们接下来一步步的解密。<br>首先先看一下<code>YYMemoryCache</code>接口文件提供的属性和方法。</p>
+<pre><code>//当接到内存警告的时候是否清除内存缓存
+@property BOOL shouldRemoveAllObjectsOnMemoryWarning;
+//当程序进入后台的时候是否清除内存缓存
+@property BOOL shouldRemoveAllObjectsWhenEnteringBackground;
+//是否在主线程释放内存
+@property BOOL releaseOnMainThread;
+//是否异步释放内存
+@property BOOL releaseAsynchronously;
+
+//根据key判断是否存在缓存
+- (BOOL)containsObjectForKey:(id)key;
+
+//根据key获取缓存
+- (nullable id)objectForKey:(id)key;
+
+//设置缓存
+- (void)setObject:(nullable id)object forKey:(id)key;
+
+//设置缓存+花销  类似NSCache接口
+- (void)setObject:(nullable id)object forKey:(id)key withCost:(NSUInteger)cost;
+
+//删除缓存
+- (void)removeObjectForKey:(id)key;
+
+//删除所有缓存
+- (void)removeAllObjects;
+
+//删除缓存到count之下
+- (void)trimToCount:(NSUInteger)count;
+
+//删除缓存到cost之下
+- (void)trimToCost:(NSUInteger)cost;
+
+//删除在age之前的缓存
+- (void)trimToAge:(NSTimeInterval)age;
+</code></pre>
       
 
       
