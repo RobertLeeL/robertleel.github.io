@@ -160,6 +160,130 @@
           <div id="js-content" class="content-ll">
             
   
+    <article id="post-AFNetworking源码阅读" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/12/18/AFNetworking源码阅读/">AFNetworking源码阅读</a>
+    </h1>
+  
+
+        
+        <a href="/2018/12/18/AFNetworking源码阅读/" class="archive-article-date">
+  	<time datetime="2018-12-17T16:47:24.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-18</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/12/18/AFNetworking源码阅读/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-SDWebImage源码阅读" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
+  
+    <h1 itemprop="name">
+      <a class="article-title" href="/2018/12/18/SDWebImage源码阅读/">SDWebImage源码阅读</a>
+    </h1>
+  
+
+        
+        <a href="/2018/12/18/SDWebImage源码阅读/" class="archive-article-date">
+  	<time datetime="2018-12-17T16:46:39.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2018-12-18</time>
+</a>
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        
+      
+
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
+      
+
+      
+        <p class="article-more-link">
+          <a class="article-more-a" href="/2018/12/18/SDWebImage源码阅读/">展开全文 >></a>
+        </p>
+      
+
+      
+      <div class="clearfix"></div>
+    </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-YYImage源码阅读" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -462,6 +586,113 @@ return object;
 </blockquote>
 </blockquote>
 <hr>
+<pre><code>- (BOOL)_fileWriteWithName:(NSString *)filename data:(NSData *)data {
+    NSString *path = [_dataPath stringByAppendingPathComponent:filename];
+    return [data writeToFile:path atomically:NO];
+}
+</code></pre><p>写入磁盘的方法是<code>writeToFile: atomically:</code>方法</p>
+<pre><code>- (BOOL)_fileDeleteWithName:(NSString *)filename {
+    NSString *path = [_dataPath stringByAppendingPathComponent:filename];
+    return [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
+}
+</code></pre><p>删除磁盘的方法是通过<code>NSFileManager</code>文件管理类进行文件删除。</p>
+<pre><code>- (BOOL)_dbSaveWithKey:(NSString *)key value:(NSData *)value fileName:(NSString *)fileName extendedData:(NSData *)extendedData {
+    NSString *sql = @&quot;insert or replace into manifest (key, filename, size, inline_data, modification_time, last_access_time, extended_data) values (?1, ?2, ?3, ?4, ?5, ?6, ?7);&quot;;
+    sqlite3_stmt *stmt = [self _dbPrepareStmt:sql];
+    if (!stmt) return NO;
+
+    int timestamp = (int)time(NULL);
+    sqlite3_bind_text(stmt, 1, key.UTF8String, -1, NULL);
+    sqlite3_bind_text(stmt, 2, fileName.UTF8String, -1, NULL);
+    sqlite3_bind_int(stmt, 3, (int)value.length);
+    if (fileName.length == 0) {
+        sqlite3_bind_blob(stmt, 4, value.bytes, (int)value.length, 0);
+    } else {
+        sqlite3_bind_blob(stmt, 4, NULL, 0, 0);
+    }
+    sqlite3_bind_int(stmt, 5, timestamp);
+    sqlite3_bind_int(stmt, 6, timestamp);
+    sqlite3_bind_blob(stmt, 7, extendedData.bytes, (int)extendedData.length, 0);
+
+    int result = sqlite3_step(stmt);
+    if (result != SQLITE_DONE) {
+        if (_errorLogsEnabled) NSLog(@&quot;%s line:%d sqlite insert error (%d): %s&quot;, __FUNCTION__, __LINE__, result, sqlite3_errmsg(_db));
+        return NO;
+    }
+    return YES;
+}
+</code></pre><p>从数据库存储是数据库方法进行删除。</p>
+<ul>
+<li>首先有一段存储sql语气</li>
+<li>判断fileName是否为空，为空将value存入数据库，如果不为空就不存入数据库</li>
+<li>然后再设置modTime,和accessTime,实现LRU算法</li>
+</ul>
+<hr>
+<pre><code>- (BOOL)removeItemForKey:(NSString *)key {
+    if (key.length == 0) return NO;
+    switch (_type) {
+        case YYKVStorageTypeSQLite: {
+            return [self _dbDeleteItemWithKey:key];
+        } break;
+        case YYKVStorageTypeFile:
+        case YYKVStorageTypeMixed: {
+            NSString *filename = [self _dbGetFilenameWithKey:key];
+            if (filename) {
+                [self _fileDeleteWithName:filename];
+            }
+            return [self _dbDeleteItemWithKey:key];
+        } break;
+        default: return NO;
+    }
+}
+</code></pre><p>这个方法是根据key删除缓存，过程如下：</p>
+<blockquote>
+<blockquote>
+<p>1、首先判断key是否为空，为空返回失败。<br>2、判断存储类型，如果数据库存储就从数据库中删除<br>3、如果是文件和混合存储，那就一次删除缓存。</p>
+</blockquote>
+</blockquote>
+<pre><code>//数据库删除方法，具体细节就不介绍了
+- (BOOL)_dbDeleteItemWithKey:(NSString *)key {
+    NSString *sql = @&quot;delete from manifest where key = ?1;&quot;;
+    sqlite3_stmt *stmt = [self _dbPrepareStmt:sql];
+    if (!stmt) return NO;
+    sqlite3_bind_text(stmt, 1, key.UTF8String, -1, NULL);
+
+    int result = sqlite3_step(stmt);
+    if (result != SQLITE_DONE) {
+        if (_errorLogsEnabled) NSLog(@&quot;%s line:%d db delete error (%d): %s&quot;, __FUNCTION__, __LINE__, result, sqlite3_errmsg(_db));
+        return NO;
+    }
+    return YES;
+}
+
+//文件删除方法
+- (BOOL)_fileDeleteWithName:(NSString *)filename {
+NSString *path = [_dataPath stringByAppendingPathComponent:filename];
+return [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
+}
+</code></pre><p>再来看一下获取缓存的方法：</p>
+<pre><code>- (YYKVStorageItem *)getItemForKey:(NSString *)key {
+    if (key.length == 0) return nil;
+    YYKVStorageItem *item = [self _dbGetItemWithKey:key excludeInlineData:NO];
+    if (item) {
+        [self _dbUpdateAccessTimeWithKey:key];
+        if (item.filename) {
+            item.value = [self _fileReadWithName:item.filename];
+            if (!item.value) {
+                [self _dbDeleteItemWithKey:key];
+                item = nil;
+            }
+        }
+    }
+    return item;
+}
+</code></pre><blockquote>
+<blockquote>
+<p>1、首先判断key是否为空，为空返回失败。<br>2、先从数据库中获取，如果数据库获取到，更新数据库中数据的最后一次获取时间<br>3、然后判断获取缓存的value值，如果获取value为空则从数据库中删除key。</p>
+</blockquote>
+</blockquote>
+<p>具体如何从数据库中获取Item就不详细介绍了。这就是磁盘存储过程。</p>
 
       
 

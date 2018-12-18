@@ -17,7 +17,7 @@
 <meta property="og:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/YYCache类.png">
-<meta property="og:updated_time" content="2018-12-17T16:44:26.723Z">
+<meta property="og:updated_time" content="2018-12-18T14:53:37.424Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="YYCache源码阅读">
 <meta name="twitter:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
@@ -401,6 +401,113 @@ return object;
 </blockquote>
 </blockquote>
 <hr>
+<pre><code>- (BOOL)_fileWriteWithName:(NSString *)filename data:(NSData *)data {
+    NSString *path = [_dataPath stringByAppendingPathComponent:filename];
+    return [data writeToFile:path atomically:NO];
+}
+</code></pre><p>写入磁盘的方法是<code>writeToFile: atomically:</code>方法</p>
+<pre><code>- (BOOL)_fileDeleteWithName:(NSString *)filename {
+    NSString *path = [_dataPath stringByAppendingPathComponent:filename];
+    return [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
+}
+</code></pre><p>删除磁盘的方法是通过<code>NSFileManager</code>文件管理类进行文件删除。</p>
+<pre><code>- (BOOL)_dbSaveWithKey:(NSString *)key value:(NSData *)value fileName:(NSString *)fileName extendedData:(NSData *)extendedData {
+    NSString *sql = @&quot;insert or replace into manifest (key, filename, size, inline_data, modification_time, last_access_time, extended_data) values (?1, ?2, ?3, ?4, ?5, ?6, ?7);&quot;;
+    sqlite3_stmt *stmt = [self _dbPrepareStmt:sql];
+    if (!stmt) return NO;
+
+    int timestamp = (int)time(NULL);
+    sqlite3_bind_text(stmt, 1, key.UTF8String, -1, NULL);
+    sqlite3_bind_text(stmt, 2, fileName.UTF8String, -1, NULL);
+    sqlite3_bind_int(stmt, 3, (int)value.length);
+    if (fileName.length == 0) {
+        sqlite3_bind_blob(stmt, 4, value.bytes, (int)value.length, 0);
+    } else {
+        sqlite3_bind_blob(stmt, 4, NULL, 0, 0);
+    }
+    sqlite3_bind_int(stmt, 5, timestamp);
+    sqlite3_bind_int(stmt, 6, timestamp);
+    sqlite3_bind_blob(stmt, 7, extendedData.bytes, (int)extendedData.length, 0);
+
+    int result = sqlite3_step(stmt);
+    if (result != SQLITE_DONE) {
+        if (_errorLogsEnabled) NSLog(@&quot;%s line:%d sqlite insert error (%d): %s&quot;, __FUNCTION__, __LINE__, result, sqlite3_errmsg(_db));
+        return NO;
+    }
+    return YES;
+}
+</code></pre><p>从数据库存储是数据库方法进行删除。</p>
+<ul>
+<li>首先有一段存储sql语气</li>
+<li>判断fileName是否为空，为空将value存入数据库，如果不为空就不存入数据库</li>
+<li>然后再设置modTime,和accessTime,实现LRU算法</li>
+</ul>
+<hr>
+<pre><code>- (BOOL)removeItemForKey:(NSString *)key {
+    if (key.length == 0) return NO;
+    switch (_type) {
+        case YYKVStorageTypeSQLite: {
+            return [self _dbDeleteItemWithKey:key];
+        } break;
+        case YYKVStorageTypeFile:
+        case YYKVStorageTypeMixed: {
+            NSString *filename = [self _dbGetFilenameWithKey:key];
+            if (filename) {
+                [self _fileDeleteWithName:filename];
+            }
+            return [self _dbDeleteItemWithKey:key];
+        } break;
+        default: return NO;
+    }
+}
+</code></pre><p>这个方法是根据key删除缓存，过程如下：</p>
+<blockquote>
+<blockquote>
+<p>1、首先判断key是否为空，为空返回失败。<br>2、判断存储类型，如果数据库存储就从数据库中删除<br>3、如果是文件和混合存储，那就一次删除缓存。</p>
+</blockquote>
+</blockquote>
+<pre><code>//数据库删除方法，具体细节就不介绍了
+- (BOOL)_dbDeleteItemWithKey:(NSString *)key {
+    NSString *sql = @&quot;delete from manifest where key = ?1;&quot;;
+    sqlite3_stmt *stmt = [self _dbPrepareStmt:sql];
+    if (!stmt) return NO;
+    sqlite3_bind_text(stmt, 1, key.UTF8String, -1, NULL);
+
+    int result = sqlite3_step(stmt);
+    if (result != SQLITE_DONE) {
+        if (_errorLogsEnabled) NSLog(@&quot;%s line:%d db delete error (%d): %s&quot;, __FUNCTION__, __LINE__, result, sqlite3_errmsg(_db));
+        return NO;
+    }
+    return YES;
+}
+
+//文件删除方法
+- (BOOL)_fileDeleteWithName:(NSString *)filename {
+NSString *path = [_dataPath stringByAppendingPathComponent:filename];
+return [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
+}
+</code></pre><p>再来看一下获取缓存的方法：</p>
+<pre><code>- (YYKVStorageItem *)getItemForKey:(NSString *)key {
+    if (key.length == 0) return nil;
+    YYKVStorageItem *item = [self _dbGetItemWithKey:key excludeInlineData:NO];
+    if (item) {
+        [self _dbUpdateAccessTimeWithKey:key];
+        if (item.filename) {
+            item.value = [self _fileReadWithName:item.filename];
+            if (!item.value) {
+                [self _dbDeleteItemWithKey:key];
+                item = nil;
+            }
+        }
+    }
+    return item;
+}
+</code></pre><blockquote>
+<blockquote>
+<p>1、首先判断key是否为空，为空返回失败。<br>2、先从数据库中获取，如果数据库获取到，更新数据库中数据的最后一次获取时间<br>3、然后判断获取缓存的value值，如果获取value为空则从数据库中删除key。</p>
+</blockquote>
+</blockquote>
+<p>具体如何从数据库中获取Item就不详细介绍了。这就是磁盘存储过程。</p>
 
       
 
