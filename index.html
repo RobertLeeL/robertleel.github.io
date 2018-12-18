@@ -692,8 +692,39 @@ return [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
 <p>1、首先判断key是否为空，为空返回失败。<br>2、先从数据库中获取，如果数据库获取到，更新数据库中数据的最后一次获取时间<br>3、然后判断获取缓存的value值，如果获取value为空则从数据库中删除key。</p>
 </blockquote>
 </blockquote>
-<p>具体如何从数据库中获取Item就不详细介绍了。这就是磁盘存储过程。</p>
+<pre><code>- (BOOL)removeItemsToFitSize:(int)maxSize {
+    if (maxSize == INT_MAX) return YES;
+    if (maxSize &lt;= 0) return [self removeAllItems];
 
+    int total = [self _dbGetTotalItemSize];
+    if (total &lt; 0) return NO;
+    if (total &lt;= maxSize) return YES;
+
+    NSArray *items = nil;
+    BOOL suc = NO;
+    do {
+        int perCount = 16;
+        items = [self _dbGetItemSizeInfoOrderByTimeAscWithLimit:perCount];
+        for (YYKVStorageItem *item in items) {
+            if (total &gt; maxSize) {
+                if (item.filename) {
+                    [self _fileDeleteWithName:item.filename];
+                }
+                suc = [self _dbDeleteItemWithKey:item.key];
+                total -= item.size;
+            } else {
+                break;
+            }
+            if (!suc) break;
+        }
+    } while (total &gt; maxSize &amp;&amp; items.count &gt; 0 &amp;&amp; suc);
+    if (suc) [self _dbCheckpoint];
+    return suc;
+}
+</code></pre><p>这个方法是根据最大缓存大小进行缓存的清理，首先根据LRU算法找到items，剩余的缓存大小小于最大缓存，然后根据Key和FileName，把items从文件和数据库中删除。</p>
+<p>具体如何从数据库中获取Item就不详细介绍了。这就是磁盘存储过程。</p>
+<hr>
+<h3 id="YYMemoryCache"><a href="#YYMemoryCache" class="headerlink" title="YYMemoryCache"></a>YYMemoryCache</h3>
       
 
       
