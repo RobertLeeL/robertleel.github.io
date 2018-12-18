@@ -17,7 +17,7 @@
 <meta property="og:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/YYCache类.png">
-<meta property="og:updated_time" content="2018-12-18T15:24:47.913Z">
+<meta property="og:updated_time" content="2018-12-18T15:49:42.359Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="YYCache源码阅读">
 <meta name="twitter:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
@@ -579,7 +579,26 @@ return [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
 
 //删除在age之前的缓存
 - (void)trimToAge:(NSTimeInterval)age;
-</code></pre>
+</code></pre><p>介绍这些方法是如何实现之前，需要先介绍<code>YYMemoryCache</code>是如何进行内存缓存的。</p>
+<blockquote>
+<p><code>YYMemoryCache</code>用一个链表节点类来保存某个单独的内存缓存的信息（键，值，缓存时间等），然后用一个双向链表类来保存和管理这些节点.</p>
+</blockquote>
+<ul>
+<li>_YYLinkedMapNode：链表内的节点类，对单独内存缓存的封装。</li>
+<li>_YYLinkedMap：双向链表类，用于保存和管理所有内存缓存。</li>
+</ul>
+<h4 id="YYLinkedMapNode"><a href="#YYLinkedMapNode" class="headerlink" title="_YYLinkedMapNode"></a>_YYLinkedMapNode</h4><pre><code>@interface _YYLinkedMapNode : NSObject {
+    @package
+    __unsafe_unretained _YYLinkedMapNode *_prev; // retained by dic
+    __unsafe_unretained _YYLinkedMapNode *_next; // retained by dic
+    id _key;
+    id _value;
+    NSUInteger _cost;
+    NSTimeInterval _time;
+}
+@end
+</code></pre><p><code>_YYLinkedMapNode</code>继承自<code>NSObject</code>，在该node类中，</p>
+
       
 
       

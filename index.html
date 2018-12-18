@@ -764,7 +764,26 @@ return [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
 
 //删除在age之前的缓存
 - (void)trimToAge:(NSTimeInterval)age;
-</code></pre>
+</code></pre><p>介绍这些方法是如何实现之前，需要先介绍<code>YYMemoryCache</code>是如何进行内存缓存的。</p>
+<blockquote>
+<p><code>YYMemoryCache</code>用一个链表节点类来保存某个单独的内存缓存的信息（键，值，缓存时间等），然后用一个双向链表类来保存和管理这些节点.</p>
+</blockquote>
+<ul>
+<li>_YYLinkedMapNode：链表内的节点类，对单独内存缓存的封装。</li>
+<li>_YYLinkedMap：双向链表类，用于保存和管理所有内存缓存。</li>
+</ul>
+<h4 id="YYLinkedMapNode"><a href="#YYLinkedMapNode" class="headerlink" title="_YYLinkedMapNode"></a>_YYLinkedMapNode</h4><pre><code>@interface _YYLinkedMapNode : NSObject {
+    @package
+    __unsafe_unretained _YYLinkedMapNode *_prev; // retained by dic
+    __unsafe_unretained _YYLinkedMapNode *_next; // retained by dic
+    id _key;
+    id _value;
+    NSUInteger _cost;
+    NSTimeInterval _time;
+}
+@end
+</code></pre><p><code>_YYLinkedMapNode</code>继承自<code>NSObject</code>，在该node类中，</p>
+
       
 
       
