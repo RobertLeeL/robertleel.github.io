@@ -782,8 +782,67 @@ return [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
     NSTimeInterval _time;
 }
 @end
-</code></pre><p><code>_YYLinkedMapNode</code>继承自<code>NSObject</code>，在该node类中，</p>
+</code></pre><p><code>_YYLinkedMapNode</code>继承自<code>NSObject</code>，在该node类中，定义2个指针，一个指向头部（指向上一Node）一个指向尾部（指向下一Node）。还定义了内存缓存的key、value、cost、上次访问时间。</p>
+<h4 id="YYLinkedMap"><a href="#YYLinkedMap" class="headerlink" title="_YYLinkedMap"></a>_YYLinkedMap</h4><pre><code>/**
+ A linked map used by YYMemoryCache.
+ It&apos;s not thread-safe and does not validate the parameters.
 
+ Typically, you should not use this class directly.
+ */
+@interface _YYLinkedMap : NSObject {
+    @package
+    CFMutableDictionaryRef _dic; // do not set object directly
+    NSUInteger _totalCost;
+    NSUInteger _totalCount;
+    _YYLinkedMapNode *_head; // MRU, do not change it directly
+    _YYLinkedMapNode *_tail; // LRU, do not change it directly
+    BOOL _releaseOnMainThread;
+    BOOL _releaseAsynchronously;
+}
+
+/// Insert a node at head and update the total cost.
+/// Node and node.key should not be nil.
+///添加Node到头部
+- (void)insertNodeAtHead:(_YYLinkedMapNode *)node;
+
+/// Bring a inner node to header.
+/// Node should already inside the dic.
+///内部Node移到头部
+- (void)bringNodeToHead:(_YYLinkedMapNode *)node;
+
+/// Remove a inner node and update the total cost.
+/// Node should already inside the dic.
+///删除某一Node
+- (void)removeNode:(_YYLinkedMapNode *)node;
+
+/// Remove tail node if exist.
+/// 移除尾部Node
+- (_YYLinkedMapNode *)removeTailNode;
+
+/// Remove all node in background queue.
+///移除所以Node
+- (void)removeAll;
+
+@end
+</code></pre><p><code>_YYLinkedMap</code>声明了一个<code>CFMutableDictionaryRef</code>的<code>dictionary</code>用于内存缓存，还包含了总开销、总数量。声明了2个指针，一个指向Map的head,一个指向Map的尾<br>部。</p>
+<h5 id="YYLinkedMap和-YYLinkedMapNode关系"><a href="#YYLinkedMap和-YYLinkedMapNode关系" class="headerlink" title="_YYLinkedMap和_YYLinkedMapNode关系"></a><code>_YYLinkedMap</code>和<code>_YYLinkedMapNode</code>关系</h5><p><img src="https://user-gold-cdn.xitu.io/2018/1/22/1611c66be5e027e5?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="关系"><br>其实就是一个双向链表</p>
+<blockquote>
+<p>图片来源：<a href="https://juejin.im/post/5a657a946fb9a01cb64ee761" target="_blank" rel="noopener">J_Knight_</a></p>
+</blockquote>
+<p>接下来，看一下<code>_YYLinkedMap</code>中方法的实现。</p>
+<pre><code>- (void)insertNodeAtHead:(_YYLinkedMapNode *)node {
+    CFDictionarySetValue(_dic, (__bridge const void *)(node-&gt;_key), (__bridge const void *)(node));
+    _totalCost += node-&gt;_cost;
+    _totalCount++;
+    if (_head) {
+        node-&gt;_next = _head;
+        _head-&gt;_prev = node;
+        _head = node;
+    } else {
+        _head = _tail = node;
+    }
+}
+</code></pre>
       
 
       
