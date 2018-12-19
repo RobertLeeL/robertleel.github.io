@@ -8,18 +8,20 @@
   <link rel="dns-prefetch" href="http://robertleeng.com">
   <title>AFNetworking源码阅读 | Robert Lee</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="Robert Lee的博客">
-<meta name="keywords" content="blogs">
+  <meta name="description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系：">
+<meta name="keywords" content="0.1">
 <meta property="og:type" content="article">
 <meta property="og:title" content="AFNetworking源码阅读">
 <meta property="og:url" content="http://robertleeng.com/2018/12/18/AFNetworking源码阅读/index.html">
 <meta property="og:site_name" content="Robert Lee">
-<meta property="og:description" content="Robert Lee的博客">
+<meta property="og:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系：">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-12-17T16:47:24.960Z">
+<meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
+<meta property="og:updated_time" content="2018-12-19T13:58:49.701Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
-<meta name="twitter:description" content="Robert Lee的博客">
+<meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系：">
+<meta name="twitter:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
   
     <link rel="alternative" href="/atom.xml" title="Robert Lee" type="application/atom+xml">
   
@@ -179,7 +181,10 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        
+        <h3 id="AFNetworking-3-2-1"><a href="#AFNetworking-3-2-1" class="headerlink" title="AFNetworking 3.2.1"></a>AFNetworking 3.2.1</h3><p>如今使用OC进行开发iOS开发的可能都用过<a href="https://github.com/AFNetworking/AFNetworking" target="_blank" rel="noopener">AFNetworking</a>网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看<code>AFNetworking</code>是如何实现的。</p>
+<hr>
+<p>在介绍<code>AFNetworking</code>之前，先看一看苹果提供的原生网络框架的使用。<br>下面这张图介绍了原生提供网络编程的类之间的关系：<br><img src="/img/系统网络编程类关系.png" alt="截图"></p>
+
       
 
       
@@ -208,6 +213,17 @@
     <div class="article-info article-info-index">
       
       
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color4">0.1</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
       
 
       
@@ -398,6 +414,10 @@ return o(i(t),arguments.length<2?void 0:u(arguments[1]))}})},function(t,n,r){var
             <input type="checkbox" q-on="click:toggleTag(e)" q-attr="checked:showTags">
           </label>
           <ul class="article-tag-list" q-show="showTags">
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color4">0.1</a>
+              </li>
             
             <div class="clearfix"></div>
           </ul>
