@@ -183,6 +183,61 @@
         <h3 id="AFNetworking-3-2-1"><a href="#AFNetworking-3-2-1" class="headerlink" title="AFNetworking 3.2.1"></a>AFNetworking 3.2.1</h3><p>如今使用OC进行开发iOS开发的可能都用过<a href="https://github.com/AFNetworking/AFNetworking" target="_blank" rel="noopener">AFNetworking</a>网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看<code>AFNetworking</code>是如何实现的。</p>
 <hr>
 <p>在介绍<code>AFNetworking</code>之前，先看一看苹果提供的原生网络框架的使用。<br>下面这张图介绍了原生提供网络编程的类之间的关系：<br><img src="/img/系统网络编程类关系.png" alt="截图"></p>
+<p>我们首先介绍一下各个类：</p>
+<ul>
+<li>NSURL<br><code>URL</code>的全称是 <code>Uniform Resource Locator</code>意思是统一资源定位符，URL 采用 ASCII 编码格式，所以不支持如中文等非 ASCII 码字符。意思就像是人的身份证一样，可以根据身份证号码定位到一个人。</li>
+<li>NSURLRequest<br><code>NSURLRequest</code>通过一个<code>NSUR</code>L来创建一个请求对象，一个<code>NSURLRequest</code>就是一个请求。我们来看一下NSURLRequest中有哪些常用方法。</li>
+</ul>
+<pre><code>//类方法；根据一个URl创建请求，使用默认缓存NSURLRequestUseProtocolCachePolicy和默认超时相应时间60秒
++ (instancetype)requestWithURL:(NSURL *)URL;
+
+//类方法；根据URL缓存策略和超时相应时间创建请求
++ (instancetype)requestWithURL:(NSURL *)URL cachePolicy:(NSURLRequestCachePolicy)cachePolicy timeoutInterval:(NSTimeInterval)timeoutInterval;
+
+//实例方法；根据一个URl创建请求，使用默认缓存NSURLRequestUseProtocolCachePolicy和默认超时相应时间60秒
+- (instancetype)initWithURL:(NSURL *)URL;
+
+//实例方法；根据URL缓存策略和超时相应时间创建请求
+- (instancetype)initWithURL:(NSURL *)URL cachePolicy:(NSURLRequestCachePolicy)cachePolicy timeoutInterval:(NSTimeInterval)timeoutInterval NS_DESIGNATED_INITIALIZER;
+
+//缓存策略有如下几种：
+typedef NS_ENUM(NSUInteger, NSURLRequestCachePolicy)
+{
+//如果有缓存则进行其他操作，如果没有缓存则从服务端获取
+NSURLRequestUseProtocolCachePolicy = 0,
+
+//忽略本地缓存 直接从服务端获取
+NSURLRequestReloadIgnoringLocalCacheData = 1,
+
+//忽略本地缓存、代理服务器缓存、直接从服务器获取 目前还没有实现
+NSURLRequestReloadIgnoringLocalAndRemoteCacheData = 4, // Unimplemented
+
+//已被第二种缓存策略取代
+NSURLRequestReloadIgnoringCacheData = NSURLRequestReloadIgnoringLocalCacheData,
+
+//有缓存就用 不论失效与否 没有服务端请求
+NSURLRequestReturnCacheDataElseLoad = 2,
+
+//只加载本地缓存，没有就返回失败
+NSURLRequestReturnCacheDataDontLoad = 3,
+
+//缓存数据服务端确认有效后使用
+NSURLRequestReloadRevalidatingCacheData = 5, // Unimplemented
+};
+</code></pre><p><code>NSURLRequest</code>对象是一个请求，包含了发送给服务器的所以信息，包括：</p>
+<pre><code>//请求的方法
+@property (nullable, readonly, copy) NSString *HTTPMethod;
+
+//请求头文件
+@property (nullable, readonly, copy) NSDictionary&lt;NSString *, NSString *&gt; *allHTTPHeaderFields;
+
+//请求体
+@property (nullable, readonly, copy) NSData *HTTPBody;
+</code></pre><p>但是这些属性都是readonly的，所以<code>NSURLRequest</code>中还声明了<code>NSMutableURLRequest</code>的一个分类，这个分类中可以设置这些属性。</p>
+<hr>
+<ul>
+<li>NSURLConnection</li>
+</ul>
 
       
 
