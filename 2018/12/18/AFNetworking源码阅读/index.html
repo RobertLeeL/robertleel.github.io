@@ -17,7 +17,7 @@
 <meta property="og:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系： 我们首先介绍一下各个类：">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
-<meta property="og:updated_time" content="2018-12-20T17:00:26.382Z">
+<meta property="og:updated_time" content="2018-12-20T17:15:08.420Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系： 我们首先介绍一下各个类：">
@@ -279,8 +279,10 @@ NSLog(@&quot;response:%@&quot;,response);
 //控制台打印了返回的数据和错误信息 代码太多就不写了
 </code></pre><p>**除此之外，还可以使用delegate进行数据请求。</p>
 <h4 id="NSURLConnectionDelegate"><a href="#NSURLConnectionDelegate" class="headerlink" title="NSURLConnectionDelegate"></a>NSURLConnectionDelegate</h4><pre><code>//这些代理方法 主要涉及 SSL/TSL加密的相关接口。
+//这些代理方法我都没用使用过，所以说的也不是太全面
 @protocol NSURLConnectionDelegate &lt;NSObject&gt;
 @optional
+//如果在资源加载期间发生错误，将最多调用一次。之后不会再进行其他回调，如：请求超时
 - (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error;
 - (BOOL)connectionShouldUseCredentialStorage:(NSURLConnection *)connection;
 - (void)connection:(NSURLConnection *)connection willSendRequestForAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge;
@@ -288,6 +290,30 @@ NSLog(@&quot;response:%@&quot;,response);
 - (void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge ;
 - (void)connection:(NSURLConnection *)connection didCancelAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge;
 @end
+</code></pre><p>有兴趣的可以看一下苹果官方文档： <a href="https://developer.apple.com/documentation/foundation/nsurlconnectiondelegate?language=objc" target="_blank" rel="noopener">NSURLConnectionDelegate</a></p>
+<h4 id="NSURLConnectionDataDelegate"><a href="#NSURLConnectionDataDelegate" class="headerlink" title="NSURLConnectionDataDelegate"></a>NSURLConnectionDataDelegate</h4><p>该代理监听了服务器返回的数据，继承自<code>NSURLConnectionDelegate</code>代理。这个&lt;&gt;是代理继承的意思，我也是刚知道不久。</p>
+<pre><code>@protocol NSURLConnectionDataDelegate &lt;NSURLConnectionDelegate&gt;
+@optional
+//在发送请求之前的代理方法，重定义响应的response
+- (nullable NSURLRequest *)connection:(NSURLConnection *)connection willSendRequest:(NSURLRequest *)request redirectResponse:(nullable NSURLResponse *)response;
+
+//开始接受到服务器的响应时调用
+- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response;
+
+//接受到服务器返回的数据时调用
+- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data;
+
+//发送完请求结构体是调用的数据
+- (nullable NSInputStream *)connection:(NSURLConnection *)connection needNewBodyStream:(NSURLRequest *)request;
+- (void)connection:(NSURLConnection *)connection   didSendBodyData:(NSInteger)bytesWritten
+                                                 totalBytesWritten:(NSInteger)totalBytesWritten
+                                         totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite;
+
+//即将进行response缓存是调用
+- (nullable NSCachedURLResponse *)connection:(NSURLConnection *)connection willCacheResponse:(NSCachedURLResponse *)cachedResponse;
+
+//服务器返回的数据已经完全接受是调用
+- (void)connectionDidFinishLoading:(NSURLConnection *)connection;
 </code></pre>
       
 
