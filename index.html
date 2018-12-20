@@ -302,16 +302,16 @@ NSLog(@&quot;response:%@&quot;,response);
 //接受到服务器返回的数据时调用
 - (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data;
 
-//发送完请求结构体是调用的数据
+//发送完请求结构体是调用的数据,接受数据的过程。类似于HTTP post请求
 - (nullable NSInputStream *)connection:(NSURLConnection *)connection needNewBodyStream:(NSURLRequest *)request;
 - (void)connection:(NSURLConnection *)connection   didSendBodyData:(NSInteger)bytesWritten
                                                  totalBytesWritten:(NSInteger)totalBytesWritten
                                          totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite;
 
-//即将进行response缓存是调用
+//在连接将缓存的响应存储在缓存中之前发送，以便为委托者提供更改它的机会。
 - (nullable NSCachedURLResponse *)connection:(NSURLConnection *)connection willCacheResponse:(NSCachedURLResponse *)cachedResponse;
 
-//服务器返回的数据已经完全接受是调用
+//服务器返回的数据已经完全接受时调用
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection;
 </code></pre>
       

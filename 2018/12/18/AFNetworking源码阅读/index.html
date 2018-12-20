@@ -17,7 +17,7 @@
 <meta property="og:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系： 我们首先介绍一下各个类：">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
-<meta property="og:updated_time" content="2018-12-20T17:15:08.420Z">
+<meta property="og:updated_time" content="2018-12-20T17:18:56.462Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系： 我们首先介绍一下各个类：">
@@ -303,16 +303,16 @@ NSLog(@&quot;response:%@&quot;,response);
 //接受到服务器返回的数据时调用
 - (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data;
 
-//发送完请求结构体是调用的数据
+//发送完请求结构体是调用的数据,接受数据的过程。类似于HTTP post请求
 - (nullable NSInputStream *)connection:(NSURLConnection *)connection needNewBodyStream:(NSURLRequest *)request;
 - (void)connection:(NSURLConnection *)connection   didSendBodyData:(NSInteger)bytesWritten
                                                  totalBytesWritten:(NSInteger)totalBytesWritten
                                          totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite;
 
-//即将进行response缓存是调用
+//在连接将缓存的响应存储在缓存中之前发送，以便为委托者提供更改它的机会。
 - (nullable NSCachedURLResponse *)connection:(NSURLConnection *)connection willCacheResponse:(NSCachedURLResponse *)cachedResponse;
 
-//服务器返回的数据已经完全接受是调用
+//服务器返回的数据已经完全接受时调用
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection;
 </code></pre>
       
