@@ -236,7 +236,13 @@ NSURLRequestReloadRevalidatingCacheData = 5, // Unimplemented
 </code></pre><p>但是这些属性都是readonly的，所以<code>NSURLRequest</code>中还声明了<code>NSMutableURLRequest</code>的一个分类，这个分类中可以设置这些属性。</p>
 <hr>
 <ul>
-<li>NSURLConnection</li>
+<li>NSURLConnection<br><code>NSURLConnection</code>这个类以及被苹果公司废弃了，好像是在iOS9的时候废弃的，使用`NSURLSession这个类代替。在这里简单介绍一下使用方法。</li>
+</ul>
+<p>使用<code>NSURLConnection</code>发送一个请求大致分为三步：</p>
+<ul>
+<li>1、创建一个<code>NSURL</code>对象，设置请求的路径。</li>
+<li>2、根据<code>NSURL</code>创建一个<code>NSURLRequest</code>请求。</li>
+<li>3、使用<code>NSURLConnection</code>向服务器发送请求。</li>
 </ul>
 
       
