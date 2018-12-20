@@ -17,7 +17,7 @@
 <meta property="og:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系： 我们首先介绍一下各个类：">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
-<meta property="og:updated_time" content="2018-12-20T15:39:16.990Z">
+<meta property="og:updated_time" content="2018-12-20T15:53:02.653Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系： 我们首先介绍一下各个类：">
@@ -245,6 +245,7 @@ NSURLRequestReloadRevalidatingCacheData = 5, // Unimplemented
 <li>2、根据<code>NSURL</code>创建一个<code>NSURLRequest</code>请求。</li>
 <li>3、使用<code>NSURLConnection</code>向服务器发送请求。</li>
 </ul>
+<p><strong>苹果公司改了文档了？怎么和我以前刚学的文档有点不同了呢?</strong><br><strong>读完官方文档才知道<a href="https://developer.apple.com/documentation/foundation/nsurlconnection?language=objc" target="_blank" rel="noopener">NSURLConnection</a>真的是废弃了很多方法，居然我在Xcode中没有找到废弃的方法。这就让我很尴尬了，那我就重新学一遍<code>NSURLConnection</code>,废弃的方法不说，使用一下未被废弃的方法。</strong></p>
 
       
 
