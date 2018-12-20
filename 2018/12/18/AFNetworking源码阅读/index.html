@@ -17,7 +17,7 @@
 <meta property="og:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系： 我们首先介绍一下各个类：">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
-<meta property="og:updated_time" content="2018-12-20T15:59:08.360Z">
+<meta property="og:updated_time" content="2018-12-20T17:00:26.382Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系： 我们首先介绍一下各个类：">
@@ -246,7 +246,49 @@ NSURLRequestReloadRevalidatingCacheData = 5, // Unimplemented
 <li>3、使用<code>NSURLConnection</code>向服务器发送请求。</li>
 </ul>
 <p><strong>读完官方文档才知道<a href="https://developer.apple.com/documentation/foundation/nsurlconnection?language=objc" target="_blank" rel="noopener">NSURLConnection</a>真的是废弃了很多方法，那我就重新学一遍<code>NSURLConnection</code>,再回忆一下用法。</strong></p>
+<p><code>NSURLConnection</code>创建了2个分类，分别发送同步和异步请求。<br><strong>下载这两种发现在iOS9以后就被废弃了，已经被<code>NSURLSession</code>中的方法取代，但是iOS有向下兼容行，使用只会提示警告，而不是报错</strong></p>
+<pre><code>/*发送同步请求，这个会阻塞线程知道服务器返回数据为止
+*request : 请求
+*response : 付不起返回的URL响应头消息
+*error : 返回错误信息
+*/
++ (nullable NSData *)sendSynchronousRequest:(NSURLRequest *)request returningResponse:(NSURLResponse * _Nullable * _Nullable)response error:(NSError **)error;
 
+/*异步请求，不会阻塞线程
+*queue : 异步操作队列
+*handler : 回调blog
+*/
++ (void)sendAsynchronousRequest:(NSURLRequest*) request
+                        queue:(NSOperationQueue*) queue
+            completionHandler:(void (^)(NSURLResponse* _Nullable response, NSData* _Nullable data, NSError* _Nullable connectionError)) handle;
+
+
+NSURL *url = [NSURL URLWithString:@&quot;https://api.seniverse.com/v3/weather/now.json?key=your_api_key&amp;location=beijing&amp;language=zh-Hans&amp;unit=c&quot;];
+NSURLRequest *request = [NSURLRequest requestWithURL:url];
+NSError *error = nil;
+NSURLResponse *response = nil;
+//同步请求使用方法  
+NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:&amp;response error:&amp;error];
+//异步请求方法
+[NSURLConnection sendAsynchronousRequest:request queue:[[NSOperationQueue alloc] init] completionHandler:^(NSURLResponse * _Nullable response, NSData * _Nullable data, NSError * _Nullable connectionError) {
+
+}];
+NSLog(@&quot;data:%@&quot;,data);
+NSLog(@&quot;error:%@&quot;,error);
+NSLog(@&quot;response:%@&quot;,response);
+//控制台打印了返回的数据和错误信息 代码太多就不写了
+</code></pre><p>**除此之外，还可以使用delegate进行数据请求。</p>
+<h4 id="NSURLConnectionDelegate"><a href="#NSURLConnectionDelegate" class="headerlink" title="NSURLConnectionDelegate"></a>NSURLConnectionDelegate</h4><pre><code>//这些代理方法 主要涉及 SSL/TSL加密的相关接口。
+@protocol NSURLConnectionDelegate &lt;NSObject&gt;
+@optional
+- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error;
+- (BOOL)connectionShouldUseCredentialStorage:(NSURLConnection *)connection;
+- (void)connection:(NSURLConnection *)connection willSendRequestForAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge;
+- (BOOL)connection:(NSURLConnection *)connection canAuthenticateAgainstProtectionSpace:(NSURLProtectionSpace *)protectionSpace ;
+- (void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge ;
+- (void)connection:(NSURLConnection *)connection didCancelAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge;
+@end
+</code></pre>
       
 
       
