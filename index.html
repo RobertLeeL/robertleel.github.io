@@ -362,7 +362,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-21 01:18:56" itemprop="dateModified" datetime="2018-12-21T01:18:56+08:00">2018-12-21</time>
+                <time title="Modified: 2018-12-22 00:38:29" itemprop="dateModified" datetime="2018-12-22T00:38:29+08:00">2018-12-22</time>
               
             
           </span>
@@ -396,142 +396,16 @@
 
       
         
+          <h3 id="AFNetworking-3-2-1"><a href="#AFNetworking-3-2-1" class="headerlink" title="AFNetworking 3.2.1"></a>AFNetworking 3.2.1</h3><p>如今使用OC进行开发iOS开发的可能都用过<a href="https://github.com/AFNetworking/AFNetworking" target="_blank" rel="noopener">AFNetworking</a>网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看<code>AFNetworking</code>是如何实现的。</p>
+          <!--noindex-->
           
-            <h3 id="AFNetworking-3-2-1"><a href="#AFNetworking-3-2-1" class="headerlink" title="AFNetworking 3.2.1"></a>AFNetworking 3.2.1</h3><p>如今使用OC进行开发iOS开发的可能都用过<a href="https://github.com/AFNetworking/AFNetworking" target="_blank" rel="noopener">AFNetworking</a>网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看<code>AFNetworking</code>是如何实现的。</p>
-<hr>
-<p>在介绍<code>AFNetworking</code>之前，先看一看苹果提供的原生网络框架的使用。<br>下面这张图介绍了原生提供网络编程的类之间的关系：<br><img src="/img/系统网络编程类关系.png" alt="截图"></p>
-<p>我们首先介绍一下各个类：</p>
-<ul>
-<li>NSURL<br><code>URL</code>的全称是 <code>Uniform Resource Locator</code>意思是统一资源定位符，URL 采用 ASCII 编码格式，所以不支持如中文等非 ASCII 码字符。意思就像是人的身份证一样，可以根据身份证号码定位到一个人。</li>
-<li>NSURLRequest<br><code>NSURLRequest</code>通过一个<code>NSUR</code>L来创建一个请求对象，一个<code>NSURLRequest</code>就是一个请求。我们来看一下NSURLRequest中有哪些常用方法。</li>
-</ul>
-<pre><code>//类方法；根据一个URl创建请求，使用默认缓存NSURLRequestUseProtocolCachePolicy和默认超时相应时间60秒
-+ (instancetype)requestWithURL:(NSURL *)URL;
-
-//类方法；根据URL缓存策略和超时相应时间创建请求
-+ (instancetype)requestWithURL:(NSURL *)URL cachePolicy:(NSURLRequestCachePolicy)cachePolicy timeoutInterval:(NSTimeInterval)timeoutInterval;
-
-//实例方法；根据一个URl创建请求，使用默认缓存NSURLRequestUseProtocolCachePolicy和默认超时相应时间60秒
-- (instancetype)initWithURL:(NSURL *)URL;
-
-//实例方法；根据URL缓存策略和超时相应时间创建请求
-- (instancetype)initWithURL:(NSURL *)URL cachePolicy:(NSURLRequestCachePolicy)cachePolicy timeoutInterval:(NSTimeInterval)timeoutInterval NS_DESIGNATED_INITIALIZER;
-
-//缓存策略有如下几种：
-typedef NS_ENUM(NSUInteger, NSURLRequestCachePolicy)
-{
-//如果有缓存则进行其他操作，如果没有缓存则从服务端获取
-NSURLRequestUseProtocolCachePolicy = 0,
-
-//忽略本地缓存 直接从服务端获取
-NSURLRequestReloadIgnoringLocalCacheData = 1,
-
-//忽略本地缓存、代理服务器缓存、直接从服务器获取 目前还没有实现
-NSURLRequestReloadIgnoringLocalAndRemoteCacheData = 4, // Unimplemented
-
-//已被第二种缓存策略取代
-NSURLRequestReloadIgnoringCacheData = NSURLRequestReloadIgnoringLocalCacheData,
-
-//有缓存就用 不论失效与否 没有服务端请求
-NSURLRequestReturnCacheDataElseLoad = 2,
-
-//只加载本地缓存，没有就返回失败
-NSURLRequestReturnCacheDataDontLoad = 3,
-
-//缓存数据服务端确认有效后使用
-NSURLRequestReloadRevalidatingCacheData = 5, // Unimplemented
-};
-</code></pre><p><code>NSURLRequest</code>对象是一个请求，包含了发送给服务器的所以信息，包括：</p>
-<pre><code>//请求的方法
-@property (nullable, readonly, copy) NSString *HTTPMethod;
-
-//请求头文件
-@property (nullable, readonly, copy) NSDictionary&lt;NSString *, NSString *&gt; *allHTTPHeaderFields;
-
-//请求体
-@property (nullable, readonly, copy) NSData *HTTPBody;
-</code></pre><p>但是这些属性都是readonly的，所以<code>NSURLRequest</code>中还声明了<code>NSMutableURLRequest</code>的一个分类，这个分类中可以设置这些属性。</p>
-<hr>
-<ul>
-<li>NSURLConnection<br><code>NSURLConnection</code>这个类以及被苹果公司废弃了，好像是在iOS9的时候废弃的，使用`NSURLSession这个类代替。在这里简单介绍一下使用方法。</li>
-</ul>
-<p>使用<code>NSURLConnection</code>发送一个请求大致分为三步：</p>
-<ul>
-<li>1、创建一个<code>NSURL</code>对象，设置请求的路径。</li>
-<li>2、根据<code>NSURL</code>创建一个<code>NSURLRequest</code>请求。</li>
-<li>3、使用<code>NSURLConnection</code>向服务器发送请求。</li>
-</ul>
-<p><strong>读完官方文档才知道<a href="https://developer.apple.com/documentation/foundation/nsurlconnection?language=objc" target="_blank" rel="noopener">NSURLConnection</a>真的是废弃了很多方法，那我就重新学一遍<code>NSURLConnection</code>,再回忆一下用法。</strong></p>
-<p><code>NSURLConnection</code>创建了2个分类，分别发送同步和异步请求。<br><strong>下载这两种发现在iOS9以后就被废弃了，已经被<code>NSURLSession</code>中的方法取代，但是iOS有向下兼容行，使用只会提示警告，而不是报错</strong></p>
-<pre><code>/*发送同步请求，这个会阻塞线程知道服务器返回数据为止
-*request : 请求
-*response : 付不起返回的URL响应头消息
-*error : 返回错误信息
-*/
-+ (nullable NSData *)sendSynchronousRequest:(NSURLRequest *)request returningResponse:(NSURLResponse * _Nullable * _Nullable)response error:(NSError **)error;
-
-/*异步请求，不会阻塞线程
-*queue : 异步操作队列
-*handler : 回调blog
-*/
-+ (void)sendAsynchronousRequest:(NSURLRequest*) request
-                        queue:(NSOperationQueue*) queue
-            completionHandler:(void (^)(NSURLResponse* _Nullable response, NSData* _Nullable data, NSError* _Nullable connectionError)) handle;
-
-
-NSURL *url = [NSURL URLWithString:@&quot;https://api.seniverse.com/v3/weather/now.json?key=your_api_key&amp;location=beijing&amp;language=zh-Hans&amp;unit=c&quot;];
-NSURLRequest *request = [NSURLRequest requestWithURL:url];
-NSError *error = nil;
-NSURLResponse *response = nil;
-//同步请求使用方法  
-NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:&amp;response error:&amp;error];
-//异步请求方法
-[NSURLConnection sendAsynchronousRequest:request queue:[[NSOperationQueue alloc] init] completionHandler:^(NSURLResponse * _Nullable response, NSData * _Nullable data, NSError * _Nullable connectionError) {
-
-}];
-NSLog(@&quot;data:%@&quot;,data);
-NSLog(@&quot;error:%@&quot;,error);
-NSLog(@&quot;response:%@&quot;,response);
-//控制台打印了返回的数据和错误信息 代码太多就不写了
-</code></pre><p>**除此之外，还可以使用delegate进行数据请求。</p>
-<h4 id="NSURLConnectionDelegate"><a href="#NSURLConnectionDelegate" class="headerlink" title="NSURLConnectionDelegate"></a>NSURLConnectionDelegate</h4><pre><code>//这些代理方法 主要涉及 SSL/TSL加密的相关接口。
-//这些代理方法我都没用使用过，所以说的也不是太全面
-@protocol NSURLConnectionDelegate &lt;NSObject&gt;
-@optional
-//如果在资源加载期间发生错误，将最多调用一次。之后不会再进行其他回调，如：请求超时
-- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error;
-- (BOOL)connectionShouldUseCredentialStorage:(NSURLConnection *)connection;
-- (void)connection:(NSURLConnection *)connection willSendRequestForAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge;
-- (BOOL)connection:(NSURLConnection *)connection canAuthenticateAgainstProtectionSpace:(NSURLProtectionSpace *)protectionSpace ;
-- (void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge ;
-- (void)connection:(NSURLConnection *)connection didCancelAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge;
-@end
-</code></pre><p>有兴趣的可以看一下苹果官方文档： <a href="https://developer.apple.com/documentation/foundation/nsurlconnectiondelegate?language=objc" target="_blank" rel="noopener">NSURLConnectionDelegate</a></p>
-<h4 id="NSURLConnectionDataDelegate"><a href="#NSURLConnectionDataDelegate" class="headerlink" title="NSURLConnectionDataDelegate"></a>NSURLConnectionDataDelegate</h4><p>该代理监听了服务器返回的数据，继承自<code>NSURLConnectionDelegate</code>代理。这个&lt;&gt;是代理继承的意思，我也是刚知道不久。</p>
-<pre><code>@protocol NSURLConnectionDataDelegate &lt;NSURLConnectionDelegate&gt;
-@optional
-//在发送请求之前的代理方法，重定义响应的response
-- (nullable NSURLRequest *)connection:(NSURLConnection *)connection willSendRequest:(NSURLRequest *)request redirectResponse:(nullable NSURLResponse *)response;
-
-//开始接受到服务器的响应时调用
-- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response;
-
-//接受到服务器返回的数据时调用
-- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data;
-
-//发送完请求结构体是调用的数据,接受数据的过程。类似于HTTP post请求
-- (nullable NSInputStream *)connection:(NSURLConnection *)connection needNewBodyStream:(NSURLRequest *)request;
-- (void)connection:(NSURLConnection *)connection   didSendBodyData:(NSInteger)bytesWritten
-                                                 totalBytesWritten:(NSInteger)totalBytesWritten
-                                         totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite;
-
-//在连接将缓存的响应存储在缓存中之前发送，以便为委托者提供更改它的机会。
-- (nullable NSCachedURLResponse *)connection:(NSURLConnection *)connection willCacheResponse:(NSCachedURLResponse *)cachedResponse;
-
-//服务器返回的数据已经完全接受时调用
-- (void)connectionDidFinishLoading:(NSURLConnection *)connection;
-</code></pre>
-          
+            <div class="post-button text-center">
+              <a class="btn" href="/2018/12/18/AFNetworking源码阅读/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+         
+          <!--/noindex-->
         
       
     </div>
@@ -922,7 +796,7 @@ NSLog(@&quot;response:%@&quot;,response);
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-19 20:45:42" itemprop="dateModified" datetime="2018-12-19T20:45:42+08:00">2018-12-19</time>
+                <time title="Modified: 2018-12-22 00:39:02" itemprop="dateModified" datetime="2018-12-22T00:39:02+08:00">2018-12-22</time>
               
             
           </span>
@@ -956,611 +830,16 @@ NSLog(@&quot;response:%@&quot;,response);
 
       
         
+          <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>&#160;&#160;&#160;&#160;最近在看缓存相关知识，所以就阅读了<a href="https://github.com/ibireme/YYCache" target="_blank" rel="noopener">YYCache</a>源码，<code>YYCache</code>是<a href="https://blog.ibireme.com/" target="_blank" rel="noopener">ibireme</a>开源的一个线程安全的高性能缓存框架。YYCache设计思路，在<a href="https://blog.ibireme.com/2015/10/26/yycache/" target="_blank" rel="noopener">YYCache设计思路</a>大佬博客中也有提到，感兴趣的可以去膜拜一波。</p>
+          <!--noindex-->
           
-            <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>&#160;&#160;&#160;&#160;最近在看缓存相关知识，所以就阅读了<a href="https://github.com/ibireme/YYCache" target="_blank" rel="noopener">YYCache</a>源码，<code>YYCache</code>是<a href="https://blog.ibireme.com/" target="_blank" rel="noopener">ibireme</a>开源的一个线程安全的高性能缓存框架。YYCache设计思路，在<a href="https://blog.ibireme.com/2015/10/26/yycache/" target="_blank" rel="noopener">YYCache设计思路</a>大佬博客中也有提到，感兴趣的可以去膜拜一波。</p>
-<h3 id="YYCache使用"><a href="#YYCache使用" class="headerlink" title="YYCache使用"></a>YYCache使用</h3><p>&#160;&#160;<code>YYCache</code>提供了同步和异步的方式进行数据存储，</p>
-<pre><code>NSString *url = @&quot;https://www.baidu.com&quot;;
-NSString *key = @&quot;cacheKey&quot;;
-
-//初始化
-YCache *cache = [YYCache cacheWithName:@&quot;cacheTest&quot;];
-//同步方法
-//异步方法
-[cache setObject:url forKey:key withBlock:^{
-}];
-//判断缓存中，是否存在key值key得value
-BOOL result = [cache containsObjectForKey:key];
-//判断缓存中，是否存在key值key得value,bolck回调
-[cache containsObjectForKey:key withBlock:^(NSString * _Nonnull key, BOOL contains) {
-
-}];
-//根据key移除缓存
-[cache removeObjectForKey:key];
-//...还有带block回调的移除f缓存方法，还有移除所有缓存，带进度和结束block的方法，在这里就不一一介绍了。
-</code></pre><hr>
-<h3 id="YYCache包含的类"><a href="#YYCache包含的类" class="headerlink" title="YYCache包含的类"></a>YYCache包含的类</h3><p><img src="/img/YYCache类.png" alt="类图"></p>
-<ul>
-<li><code>YYCache</code>  提供了最外层的接口，调用<code>YYMemoryCache</code>和<code>YYDiskCache</code>中的方法，进行缓存、查询、删除等操作。</li>
-<li><code>YYMemoryCache</code> 内存缓存，负责容量比较小的内存，线程安全。类中使用<code>_YYLinkedMap</code>双向链表和<code>_YYLinkedMapNode</code>结点进行存储。该存储方法不支持异步存储。</li>
-<li><code>YYDiskCache</code> 磁盘存储，负责处理容量大，相对低速的磁盘缓存。在该类中，当存储对象（默认）小于20kb的时候直接存储在文件中，当大于20kb的时候，存储对象当回存储在SQLite中。<code>YYKVStorage</code>是磁盘存储的底层实现类，该存储支持异步存储。</li>
-</ul>
-<h3 id="YYCache"><a href="#YYCache" class="headerlink" title="YYCache"></a>YYCache</h3><p>&#160;&#160;&#160;&#160;<code>YYCache</code>给使用者提供了缓存操作接口。接口实现的方式都是通过调用<code>YYMemoryCache</code>和<code>YYDiskCache</code>中的方法进行缓存操作。</p>
-<h4 id="初始化"><a href="#初始化" class="headerlink" title="初始化"></a>初始化</h4><pre><code>//初始化方法中，也初始化了YYDiskCache和YYMemoryCache
-- (instancetype)initWithPath:(NSString *)path {
-    if (path.length == 0) return nil;
-    YYDiskCache *diskCache = [[YYDiskCache alloc] initWithPath:path];
-    if (!diskCache) return nil;
-    NSString *name = [path lastPathComponent];
-    YYMemoryCache *memoryCache = [YYMemoryCache new];
-    memoryCache.name = name;
-
-    self = [super init];
-    _name = name;
-    _diskCache = diskCache;
-    _memoryCache = memoryCache;
-    return self;
-}
-
-
-//设置缓存，调用的是_memoryCache和_diskCache中的方法
-- (void)setObject:(id&lt;NSCoding&gt;)object forKey:(NSString *)key {
-[_memoryCache setObject:object forKey:key];
-[_diskCache setObject:object forKey:key];
-}
-
-//先移除内存缓存 再移除磁盘缓存
-- (void)removeAllObjects {
-[_memoryCache removeAllObjects];
-[_diskCache removeAllObjects];
-}
-</code></pre><p>&#160;&#160;&#160;&#160;这些都不需要过多解释了，接下来我们看一下<code>YYDiskCache</code>和<code>YYMemoryCache</code>源码。</p>
-<hr>
-<h3 id="YYDiskCache"><a href="#YYDiskCache" class="headerlink" title="YYDiskCache"></a>YYDiskCache</h3><ul>
-<li><code>YYDiskCache</code>实现了LRU算法来清理缓存</li>
-<li>间接通过<code>YYKVStorage</code>这个类操作缓存</li>
-<li>支持cost(缓存总花销)、count(缓存总量)、age(缓存时间)、size(磁盘容量)等四种维度进行缓存。通过设置这四个属性来限制缓存。</li>
-</ul>
-<pre><code>@property NSUInteger countLimit;
-
-/**
-The maximum total cost that the cache can holdbefore it starts evicting objects.
-*/
-@property NSUInteger costLimit;
-
-/**
-The maximum expiry time of objects in cache.
-*/
-@property NSTimeInterval ageLimit;
-
-/**
-The minimum free disk space (in bytes) which the cache should kept.
-*/
-@property NSUInteger freeDiskSpaceLimit;
-</code></pre><ul>
-<li>存储方式有三种，第一种是以文件的形式存储，第二种是数据库、第三种是文件+数据库</li>
-</ul>
-<pre><code>typedef NS_ENUM(NSUInteger, YYKVStorageType) {
-
-/// The `value` is stored as a file in file system.
-YYKVStorageTypeFile = 0,
-
-/// The `value` is stored in sqlite with blob type.
-YYKVStorageTypeSQLite = 1,
-
-/// The `value` is stored in file system or sqlite based on your choice.
-YYKVStorageTypeMixed = 2,
-};
-</code></pre><p>&#160;&#160;&#160;&#160;<code>YYDiskCache</code>初始化和使用方法基本上和<code>YYCache</code>保持一致。缓存过程通过<code>YYKVStorage</code>类实现。</p>
-<hr>
-<h4 id="YYKVStorage"><a href="#YYKVStorage" class="headerlink" title="YYKVStorage"></a>YYKVStorage</h4><p>&#160;&#160;&#160;&#160;<code>YYKVStorage</code>将缓存文件分装成<code>YYKVStorageItem</code>类，它保存了缓存所对应的一些信息。</p>
-<h5 id="YYKVStorageItem"><a href="#YYKVStorageItem" class="headerlink" title="YYKVStorageItem"></a>YYKVStorageItem</h5><pre><code>@property (nonatomic, strong) NSString *key;                ///&lt; key
-@property (nonatomic, strong) NSData *value;                ///&lt; value
-@property (nullable, nonatomic, strong) NSString *filename; ///&lt; filename (nil if inline)
-@property (nonatomic) int size;                             ///&lt; value&apos;s size in bytes
-@property (nonatomic) int modTime;                          ///&lt; modification unix timestamp
-@property (nonatomic) int accessTime;                       ///&lt; last access unix timestamp
-@property (nullable, nonatomic, strong) NSData *extendedData; ///&lt; extended data (nil if no extended data)
-</code></pre><p>&#160;&#160;&#160;&#160;<code>YYKVStorageItem</code>属性中包含了缓存的key、value、文件名、大小、添加时间、最后访问时间、扩展文件信息。就是因为有最后访问时间所以在<code>YYKVStorage</code>类中实现了LRU算法，进行缓存。</p>
-<hr>
-<h6 id="接下来让我们看看YYDiskCache是如何实现缓存的添加、删除、和读取的。"><a href="#接下来让我们看看YYDiskCache是如何实现缓存的添加、删除、和读取的。" class="headerlink" title="接下来让我们看看YYDiskCache是如何实现缓存的添加、删除、和读取的。"></a>接下来让我们看看<code>YYDiskCache</code>是如何实现缓存的添加、删除、和读取的。</h6><p>在<code>YYDiskCache</code>中有这些方法进行操作缓存:</p>
-<pre><code>//下面只列举了没有回调的方法，有回调的方法就没有列举出来
-//根据key判断缓存是否存在
-- (BOOL)containsObjectForKey:(NSString *)key;
-//根据key获取缓存
-- (nullable id&lt;NSCoding&gt;)objectForKey:(NSString *)key;
-//根据key增加缓存
-- (void)setObject:(nullable id&lt;NSCoding&gt;)object forKey:(NSString *)key;
-//根据key删除缓存
-- (void)removeObjectForKey:(NSString *)key;
-//删除所有缓存
-- (void)removeAllObjects;
-</code></pre><ul>
-<li>我们一个方法一个方法看是如何实现的</li>
-</ul>
-<pre><code>//判断是否存在缓存 调用的是_kv（YYKVStorage）中的方法
-//Lock 是pthread_mutex 线程锁（互斥锁）来确保线程安全
-- (BOOL)containsObjectForKey:(NSString *)key {
-if (!key) return NO;
-Lock();
-BOOL contains = [_kv itemExistsForKey:key];
-Unlock();
-return contains;
-}
-
-/*根据key获取缓存，也是调用_kv的方法
-*具体过程就不一一介绍了。
-*/
-- (id&lt;NSCoding&gt;)objectForKey:(NSString *)key {
-if (!key) return nil;
-Lock();
-YYKVStorageItem *item = [_kv getItemForKey:key];
-Unlock();
-if (!item.value) return nil;
-
-id object = nil;
-if (_customUnarchiveBlock) {
-    object = _customUnarchiveBlock(item.value);
-} else {
-    @try {
-        object = [NSKeyedUnarchiver unarchiveObjectWithData:item.value];
-    }
-    @catch (NSException *exception) {
-        // nothing to do...
-    }
-}
-if (object &amp;&amp; item.extendedData) {
-    [YYDiskCache setExtendedData:item.extendedData toObject:object];
-}
-return object;
-}
-</code></pre><p>其他的方法，都是调用_kv(YYKVStorage)类中的方法进行缓存操作，所以接下来我们直接介绍<code>YYKVStorage</code>的实现过程。</p>
-<hr>
-<h5 id="YYKVStorage实现过程"><a href="#YYKVStorage实现过程" class="headerlink" title="YYKVStorage实现过程"></a>YYKVStorage实现过程</h5><p>&#160;&#160;&#160;&#160;先看<code>YYKVStorage</code>类接口文件中提供的方法： 只列举几个方法，其他的方法都会调用以下方法进行实现。</p>
-<pre><code>//保存或者更新缓存文件
-- (BOOL)saveItemWithKey:(NSString *)key
-                  value:(NSData *)value
-               filename:(nullable NSString *)filename
-           extendedData:(nullable NSData *)extendedData;
-
-//根据key删除缓存
-- (BOOL)removeItemForKey:(NSString *)key;
-//根据keys删除缓存
-- (BOOL)removeItemForKeys:(NSArray&lt;NSString *&gt; *)keys;
-//删除大小大于size的缓存
-- (BOOL)removeItemsLargerThanSize:(int)size;
-//删除在time之前没用到得缓存
-- (BOOL)removeItemsEarlierThanTime:(int)time;
-//删除缓存到maxSize之下，运用LRU算法
-- (BOOL)removeItemsToFitSize:(int)maxSize;
-//删除缓存到maxcount之下，运用LRU算法
-- (BOOL)removeItemsToFitCount:(int)maxCount;
-
-///下面三个方法是更加key获取缓存
-- (nullable YYKVStorageItem *)getItemForKey:(NSString *)key;
-- (nullable YYKVStorageItem *)getItemInfoForKey:(NSString *)key;
-
-- (nullable NSData *)getItemValueForKey:(NSString *)key;
-
-//根据key判断缓存是否存在
-- (BOOL)itemExistsForKey:(NSString *)key;
-</code></pre><ul>
-<li>首先我们看一下是<code>YYKVStorage</code>如何保存缓存。</li>
-</ul>
-<pre><code>- (BOOL)saveItemWithKey:(NSString *)key value:(NSData *)value filename:(NSString *)filename extendedData:(NSData *)extendedData {
-    if (key.length == 0 || value.length == 0) return NO;
-    if (_type == YYKVStorageTypeFile &amp;&amp; filename.length == 0) {
-        return NO;
-    }
-
-    if (filename.length) {
-        if (![self _fileWriteWithName:filename data:value]) {
-            return NO;
-        }
-        if (![self _dbSaveWithKey:key value:value fileName:filename extendedData:extendedData]) {
-            [self _fileDeleteWithName:filename];
-            return NO;
-        }
-        return YES;
-    } else {
-        if (_type != YYKVStorageTypeSQLite) {
-            NSString *filename = [self _dbGetFilenameWithKey:key];
-            if (filename) {
-                [self _fileDeleteWithName:filename];
-            }
-        }
-        return [self _dbSaveWithKey:key value:value fileName:nil extendedData:extendedData];
-    }
-}
-</code></pre><blockquote>
-<blockquote>
-<p>1、判断key和value是否等于nil，如果等于nil返回失败，不为空继续下一步。<br>2、如果磁盘存储为文件存储方式而且文件名为空的情况下，返回失败，否则进行下一步。<br>3、判断文件名长度，如果存在 先把数据进行文件缓存，再进行元数据数据库缓存。<br>4、如果文件名不存在，判断存储方式如果不是数据库存储，则查找出文件名进行删除。<br>5、把元数据和value存入数据库中。</p>
-</blockquote>
-</blockquote>
-<hr>
-<pre><code>- (BOOL)_fileWriteWithName:(NSString *)filename data:(NSData *)data {
-    NSString *path = [_dataPath stringByAppendingPathComponent:filename];
-    return [data writeToFile:path atomically:NO];
-}
-</code></pre><p>写入磁盘的方法是<code>writeToFile: atomically:</code>方法</p>
-<pre><code>- (BOOL)_fileDeleteWithName:(NSString *)filename {
-    NSString *path = [_dataPath stringByAppendingPathComponent:filename];
-    return [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
-}
-</code></pre><p>删除磁盘的方法是通过<code>NSFileManager</code>文件管理类进行文件删除。</p>
-<pre><code>- (BOOL)_dbSaveWithKey:(NSString *)key value:(NSData *)value fileName:(NSString *)fileName extendedData:(NSData *)extendedData {
-    NSString *sql = @&quot;insert or replace into manifest (key, filename, size, inline_data, modification_time, last_access_time, extended_data) values (?1, ?2, ?3, ?4, ?5, ?6, ?7);&quot;;
-    sqlite3_stmt *stmt = [self _dbPrepareStmt:sql];
-    if (!stmt) return NO;
-
-    int timestamp = (int)time(NULL);
-    sqlite3_bind_text(stmt, 1, key.UTF8String, -1, NULL);
-    sqlite3_bind_text(stmt, 2, fileName.UTF8String, -1, NULL);
-    sqlite3_bind_int(stmt, 3, (int)value.length);
-    if (fileName.length == 0) {
-        sqlite3_bind_blob(stmt, 4, value.bytes, (int)value.length, 0);
-    } else {
-        sqlite3_bind_blob(stmt, 4, NULL, 0, 0);
-    }
-    sqlite3_bind_int(stmt, 5, timestamp);
-    sqlite3_bind_int(stmt, 6, timestamp);
-    sqlite3_bind_blob(stmt, 7, extendedData.bytes, (int)extendedData.length, 0);
-
-    int result = sqlite3_step(stmt);
-    if (result != SQLITE_DONE) {
-        if (_errorLogsEnabled) NSLog(@&quot;%s line:%d sqlite insert error (%d): %s&quot;, __FUNCTION__, __LINE__, result, sqlite3_errmsg(_db));
-        return NO;
-    }
-    return YES;
-}
-</code></pre><p>从数据库存储是数据库方法进行删除。</p>
-<ul>
-<li>首先有一段存储sql语气</li>
-<li>判断fileName是否为空，为空将value存入数据库，如果不为空就不存入数据库</li>
-<li>然后再设置modTime,和accessTime,实现LRU算法</li>
-</ul>
-<hr>
-<pre><code>- (BOOL)removeItemForKey:(NSString *)key {
-    if (key.length == 0) return NO;
-    switch (_type) {
-        case YYKVStorageTypeSQLite: {
-            return [self _dbDeleteItemWithKey:key];
-        } break;
-        case YYKVStorageTypeFile:
-        case YYKVStorageTypeMixed: {
-            NSString *filename = [self _dbGetFilenameWithKey:key];
-            if (filename) {
-                [self _fileDeleteWithName:filename];
-            }
-            return [self _dbDeleteItemWithKey:key];
-        } break;
-        default: return NO;
-    }
-}
-</code></pre><p>这个方法是根据key删除缓存，过程如下：</p>
-<blockquote>
-<blockquote>
-<p>1、首先判断key是否为空，为空返回失败。<br>2、判断存储类型，如果数据库存储就从数据库中删除<br>3、如果是文件和混合存储，那就一次删除缓存。</p>
-</blockquote>
-</blockquote>
-<pre><code>//数据库删除方法，具体细节就不介绍了
-- (BOOL)_dbDeleteItemWithKey:(NSString *)key {
-    NSString *sql = @&quot;delete from manifest where key = ?1;&quot;;
-    sqlite3_stmt *stmt = [self _dbPrepareStmt:sql];
-    if (!stmt) return NO;
-    sqlite3_bind_text(stmt, 1, key.UTF8String, -1, NULL);
-
-    int result = sqlite3_step(stmt);
-    if (result != SQLITE_DONE) {
-        if (_errorLogsEnabled) NSLog(@&quot;%s line:%d db delete error (%d): %s&quot;, __FUNCTION__, __LINE__, result, sqlite3_errmsg(_db));
-        return NO;
-    }
-    return YES;
-}
-
-//文件删除方法
-- (BOOL)_fileDeleteWithName:(NSString *)filename {
-NSString *path = [_dataPath stringByAppendingPathComponent:filename];
-return [[NSFileManager defaultManager] removeItemAtPath:path error:NULL];
-}
-</code></pre><p>再来看一下获取缓存的方法：</p>
-<pre><code>- (YYKVStorageItem *)getItemForKey:(NSString *)key {
-    if (key.length == 0) return nil;
-    YYKVStorageItem *item = [self _dbGetItemWithKey:key excludeInlineData:NO];
-    if (item) {
-        [self _dbUpdateAccessTimeWithKey:key];
-        if (item.filename) {
-            item.value = [self _fileReadWithName:item.filename];
-            if (!item.value) {
-                [self _dbDeleteItemWithKey:key];
-                item = nil;
-            }
-        }
-    }
-    return item;
-}
-</code></pre><blockquote>
-<blockquote>
-<p>1、首先判断key是否为空，为空返回失败。<br>2、先从数据库中获取，如果数据库获取到，更新数据库中数据的最后一次获取时间<br>3、然后判断获取缓存的value值，如果获取value为空则从数据库中删除key。</p>
-</blockquote>
-</blockquote>
-<pre><code>- (BOOL)removeItemsToFitSize:(int)maxSize {
-    if (maxSize == INT_MAX) return YES;
-    if (maxSize &lt;= 0) return [self removeAllItems];
-
-    int total = [self _dbGetTotalItemSize];
-    if (total &lt; 0) return NO;
-    if (total &lt;= maxSize) return YES;
-
-    NSArray *items = nil;
-    BOOL suc = NO;
-    do {
-        int perCount = 16;
-        items = [self _dbGetItemSizeInfoOrderByTimeAscWithLimit:perCount];
-        for (YYKVStorageItem *item in items) {
-            if (total &gt; maxSize) {
-                if (item.filename) {
-                    [self _fileDeleteWithName:item.filename];
-                }
-                suc = [self _dbDeleteItemWithKey:item.key];
-                total -= item.size;
-            } else {
-                break;
-            }
-            if (!suc) break;
-        }
-    } while (total &gt; maxSize &amp;&amp; items.count &gt; 0 &amp;&amp; suc);
-    if (suc) [self _dbCheckpoint];
-    return suc;
-}
-</code></pre><p>这个方法是根据最大缓存大小进行缓存的清理，首先根据LRU算法找到items，剩余的缓存大小小于最大缓存，然后根据Key和FileName，把items从文件和数据库中删除。</p>
-<p>具体如何从数据库中获取Item就不详细介绍了。这就是磁盘存储过程。</p>
-<hr>
-<h3 id="YYMemoryCache"><a href="#YYMemoryCache" class="headerlink" title="YYMemoryCache"></a>YYMemoryCache</h3><ul>
-<li><code>YYMemoryCache</code>也实现了LRU算法来清理缓存。</li>
-<li>支持cost(缓存总花销)、count(缓存总量)、age(缓存时间)三种维度进行缓存。通过设置这三个属性来限制缓存。</li>
-</ul>
-<p><code>YYMemoryCache</code>是如何实现内存缓存、LRU算法的呢？让我们接下来一步步的解密。<br>首先先看一下<code>YYMemoryCache</code>接口文件提供的属性和方法。</p>
-<pre><code>//当接到内存警告的时候是否清除内存缓存
-@property BOOL shouldRemoveAllObjectsOnMemoryWarning;
-//当程序进入后台的时候是否清除内存缓存
-@property BOOL shouldRemoveAllObjectsWhenEnteringBackground;
-//是否在主线程释放内存
-@property BOOL releaseOnMainThread;
-//是否异步释放内存
-@property BOOL releaseAsynchronously;
-
-//根据key判断是否存在缓存
-- (BOOL)containsObjectForKey:(id)key;
-
-//根据key获取缓存
-- (nullable id)objectForKey:(id)key;
-
-//设置缓存
-- (void)setObject:(nullable id)object forKey:(id)key;
-
-//设置缓存+花销  类似NSCache接口
-- (void)setObject:(nullable id)object forKey:(id)key withCost:(NSUInteger)cost;
-
-//删除缓存
-- (void)removeObjectForKey:(id)key;
-
-//删除所有缓存
-- (void)removeAllObjects;
-
-//删除缓存到count之下
-- (void)trimToCount:(NSUInteger)count;
-
-//删除缓存到cost之下
-- (void)trimToCost:(NSUInteger)cost;
-
-//删除在age之前的缓存
-- (void)trimToAge:(NSTimeInterval)age;
-</code></pre><p>介绍这些方法是如何实现之前，需要先介绍<code>YYMemoryCache</code>是如何进行内存缓存的。</p>
-<blockquote>
-<p><code>YYMemoryCache</code>用一个链表节点类来保存某个单独的内存缓存的信息（键，值，缓存时间等），然后用一个双向链表类来保存和管理这些节点.</p>
-</blockquote>
-<ul>
-<li>_YYLinkedMapNode：链表内的节点类，对单独内存缓存的封装。</li>
-<li>_YYLinkedMap：双向链表类，用于保存和管理所有内存缓存。</li>
-</ul>
-<h4 id="YYLinkedMapNode"><a href="#YYLinkedMapNode" class="headerlink" title="_YYLinkedMapNode"></a>_YYLinkedMapNode</h4><pre><code>@interface _YYLinkedMapNode : NSObject {
-    @package
-    __unsafe_unretained _YYLinkedMapNode *_prev; // retained by dic
-    __unsafe_unretained _YYLinkedMapNode *_next; // retained by dic
-    id _key;
-    id _value;
-    NSUInteger _cost;
-    NSTimeInterval _time;
-}
-@end
-</code></pre><p><code>_YYLinkedMapNode</code>继承自<code>NSObject</code>，在该node类中，定义2个指针，一个指向头部（指向上一Node）一个指向尾部（指向下一Node）。还定义了内存缓存的key、value、cost、上次访问时间。</p>
-<h4 id="YYLinkedMap"><a href="#YYLinkedMap" class="headerlink" title="_YYLinkedMap"></a>_YYLinkedMap</h4><pre><code>/**
- A linked map used by YYMemoryCache.
- It&apos;s not thread-safe and does not validate the parameters.
-
- Typically, you should not use this class directly.
- */
-@interface _YYLinkedMap : NSObject {
-    @package
-    CFMutableDictionaryRef _dic; // do not set object directly
-    NSUInteger _totalCost;
-    NSUInteger _totalCount;
-    _YYLinkedMapNode *_head; // MRU, do not change it directly
-    _YYLinkedMapNode *_tail; // LRU, do not change it directly
-    BOOL _releaseOnMainThread;
-    BOOL _releaseAsynchronously;
-}
-
-/// Insert a node at head and update the total cost.
-/// Node and node.key should not be nil.
-///添加Node到头部
-- (void)insertNodeAtHead:(_YYLinkedMapNode *)node;
-
-/// Bring a inner node to header.
-/// Node should already inside the dic.
-///内部Node移到头部
-- (void)bringNodeToHead:(_YYLinkedMapNode *)node;
-
-/// Remove a inner node and update the total cost.
-/// Node should already inside the dic.
-///删除某一Node
-- (void)removeNode:(_YYLinkedMapNode *)node;
-
-/// Remove tail node if exist.
-/// 移除尾部Node
-- (_YYLinkedMapNode *)removeTailNode;
-
-/// Remove all node in background queue.
-///移除所以Node
-- (void)removeAll;
-
-@end
-</code></pre><p><code>_YYLinkedMap</code>声明了一个<code>CFMutableDictionaryRef</code>的<code>dictionary</code>用于内存缓存，还包含了总开销、总数量。声明了2个指针，一个指向Map的head,一个指向Map的尾<br>部。</p>
-<h5 id="YYLinkedMap和-YYLinkedMapNode关系"><a href="#YYLinkedMap和-YYLinkedMapNode关系" class="headerlink" title="_YYLinkedMap和_YYLinkedMapNode关系"></a><code>_YYLinkedMap</code>和<code>_YYLinkedMapNode</code>关系</h5><p><img src="https://user-gold-cdn.xitu.io/2018/1/22/1611c66be5e027e5?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="关系"><br>其实就是一个双向链表</p>
-<blockquote>
-<p>图片来源：<a href="https://juejin.im/post/5a657a946fb9a01cb64ee761" target="_blank" rel="noopener">J_Knight_</a></p>
-</blockquote>
-<p>接下来，看一下<code>_YYLinkedMap</code>中方法的实现。</p>
-<pre><code>//在头部插入Node
-- (void)insertNodeAtHead:(_YYLinkedMapNode *)node {
-    CFDictionarySetValue(_dic, (__bridge const void *)(node-&gt;_key), (__bridge const void *)(node));
-    _totalCost += node-&gt;_cost;
-    _totalCount++;
-    if (_head) {
-        node-&gt;_next = _head;
-        _head-&gt;_prev = node;
-        _head = node;
-    } else {
-        _head = _tail = node;
-    }
-}
-</code></pre><p>实现过程如下图所示：</p>
-<blockquote>
-<p>使用keyNote画图确实丑，有时间一定好好看看如何画图。</p>
-</blockquote>
-<p><img src="/img/YYCacheMap中插入node过程.png" alt="截图"></p>
-<pre><code>//把在链表中存在的node移到顶部
-- (void)bringNodeToHead:(_YYLinkedMapNode *)node {
-    if (_head == node) return;
-
-    if (_tail == node) {
-        _tail = node-&gt;_prev;
-        _tail-&gt;_next = nil;
-    } else {
-        node-&gt;_next-&gt;_prev = node-&gt;_prev;
-        node-&gt;_prev-&gt;_next = node-&gt;_next;
-    }
-    node-&gt;_next = _head;
-    node-&gt;_prev = nil;
-    _head-&gt;_prev = node;
-    _head = node;
-}
-
-//移除已存在的Node
-- (void)removeNode:(_YYLinkedMapNode *)node {
-   CFDictionaryRemoveValue(_dic, (__bridge const void *)(node-&gt;_key));
-   _totalCost -= node-&gt;_cost;
-   _totalCount--;
-   if (node-&gt;_next) node-&gt;_next-&gt;_prev = node-&gt;_prev;
-   if (node-&gt;_prev) node-&gt;_prev-&gt;_next = node-&gt;_next;
-   if (_head == node) _head = node-&gt;_next;
-   if (_tail == node) _tail = node-&gt;_prev;
-</code></pre><p>   }</p>
-<p><code>_YYLinkedMap</code>和<code>_YYLinkedMapNode</code>就介绍那么多，接下来让我们看看<code>YYMemoryCache</code>是怎么进行内存缓存的。</p>
-<pre><code>//判断是否存在缓存，就是在_YYLinkedMap中的CFMutableDictionaryRef 中查找是否存在该key
-- (BOOL)containsObjectForKey:(id)key {
-    if (!key) return NO;
-    pthread_mutex_lock(&amp;_lock);
-    BOOL contains = CFDictionaryContainsKey(_lru-&gt;_dic, (__bridge const void *)(key));
-    pthread_mutex_unlock(&amp;_lock);
-    return contains;
-}
-
-//根据key获取缓存，在_dict 中获取Node,在获取完之后要更新最后一次获取时间，再把node移到Map头部
-- (id)objectForKey:(id)key {
-if (!key) return nil;
-pthread_mutex_lock(&amp;_lock);
-_YYLinkedMapNode *node = CFDictionaryGetValue(_lru-&gt;_dic, (__bridge const void *)(key));
-if (node) {
-    node-&gt;_time = CACurrentMediaTime();
-    [_lru bringNodeToHead:node];
-}
-pthread_mutex_unlock(&amp;_lock);
-return node ? node-&gt;_value : nil;
-}
-</code></pre><blockquote>
-<p>设置缓存过程</p>
-<blockquote>
-<p>1、判断key是否为空，为空的话直接返回<br>2、判断Object是否为空，为空就删除该key的缓存，再返回<br>3、上面条件都满足，获取该key的node,如果该key已经有缓存，就更新缓存内容，并把该node移到map头部<br>4、如果该key中没有缓存，设置缓存内容node,把该node放在map的头部<br>5、然后根据_costLimit、_countLimit进行缓存的更新，也就是删除结尾的Node,来满足缓存条件</p>
-</blockquote>
-</blockquote>
-<pre><code>- (void)setObject:(id)object forKey:(id)key withCost:(NSUInteger)cost {
-if (!key) return;
-if (!object) {
-    [self removeObjectForKey:key];
-    return;
-}
-pthread_mutex_lock(&amp;_lock);
-_YYLinkedMapNode *node = CFDictionaryGetValue(_lru-&gt;_dic, (__bridge const void *)(key));
-NSTimeInterval now = CACurrentMediaTime();
-if (node) {
-    _lru-&gt;_totalCost -= node-&gt;_cost;
-    _lru-&gt;_totalCost += cost;
-    node-&gt;_cost = cost;
-    node-&gt;_time = now;
-    node-&gt;_value = object;
-    [_lru bringNodeToHead:node];
-} else {
-    node = [_YYLinkedMapNode new];
-    node-&gt;_cost = cost;
-    node-&gt;_time = now;
-    node-&gt;_key = key;
-    node-&gt;_value = object;
-    [_lru insertNodeAtHead:node];
-}
-if (_lru-&gt;_totalCost &gt; _costLimit) {
-    dispatch_async(_queue, ^{
-        [self trimToCost:_costLimit];
-    });
-}
-if (_lru-&gt;_totalCount &gt; _countLimit) {
-    _YYLinkedMapNode *node = [_lru removeTailNode];
-    if (_lru-&gt;_releaseAsynchronously) {
-        dispatch_queue_t queue = _lru-&gt;_releaseOnMainThread ? dispatch_get_main_queue() : YYMemoryCacheGetReleaseQueue();
-        dispatch_async(queue, ^{
-            [node class]; //hold and release in queue
-        });
-    } else if (_lru-&gt;_releaseOnMainThread &amp;&amp; !pthread_main_np()) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [node class]; //hold and release in queue
-        });
-    }
-}
-pthread_mutex_unlock(&amp;_lock);
-}
-</code></pre><p>删除Node就是调用map中的remove方法，就不在赘述了。</p>
-<hr>
-<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><h4 id="学习知识点"><a href="#学习知识点" class="headerlink" title="学习知识点"></a>学习知识点</h4><ul>
-<li>线程锁的使用<br>在<code>YYDiskCache</code>中使用的线程锁为：定义了一个信号量：<code>dispatch_semaphore_t _lock;</code><blockquote>
-<p>#define Lock() dispatch_semaphore_wait(self-&gt;_lock, DISPATCH_TIME_FOREVER)<br>#define Unlock() dispatch_semaphore_signal(self-&gt;_lock)<br>使用了信号量<code>dispatch_semaphore</code>来实现锁，当信号量设为1的时候可以当做锁来使用。</p>
-</blockquote>
-</li>
-</ul>
-<p>在<code>YYMemoryCache</code>中定义了互斥锁<code>pthread_mutex_t _lock</code>变量来保证线程安全;</p>
-<blockquote>
-<p>pthread_mutex_lock(&amp;_lock);<br>pthread_mutex_unlock(&amp;_lock);<br>通过这两个方法保证线程安全</p>
-</blockquote>
-<hr>
-<h4 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h4><ul>
-<li>双向链表的概念以及相关操作</li>
-<li>数据库的使用</li>
-<li>互斥锁，信号量的使用</li>
-<li>实现线程安全的方案</li>
-</ul>
-<hr>
-<p>这大致就是YYCache实现过程。花了好长时间写了这篇博客。不过也学到了很多内容。有很多借鉴内容，已经在文章中提及。主要感谢<a href="https://juejin.im/post/5a657a946fb9a01cb64ee761" target="_blank" rel="noopener">J_Knight_</a>这位大佬的blog给了我很大的启发。</p>
-
-          
+            <div class="post-button text-center">
+              <a class="btn" href="/2018/12/15/YYCache源码阅读/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+         
+          <!--/noindex-->
         
       
     </div>
@@ -1660,12 +939,24 @@ pthread_mutex_unlock(&amp;_lock);
                 
               
 
-              <time title="Created: 2018-12-13 21:03:11 / Modified: 21:06:51" itemprop="dateCreated datePublished" datetime="2018-12-13T21:03:11+08:00">2018-12-13</time>
+              <time title="Created: 2018-12-13 21:03:11" itemprop="dateCreated datePublished" datetime="2018-12-13T21:03:11+08:00">2018-12-13</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-12-22 00:39:44" itemprop="dateModified" datetime="2018-12-22T00:39:44+08:00">2018-12-22</time>
               
             
           </span>
@@ -1699,72 +990,16 @@ pthread_mutex_unlock(&amp;_lock);
 
       
         
+          <p>KVO（Key-Value-Observing）——观察者模式，当被观察的对象的某个属性发生变化时，观察者对象会获得通知，</p>
+          <!--noindex-->
           
-            <p>KVO（Key-Value-Observing）——观察者模式，当被观察的对象的某个属性发生变化时，观察者对象会获得通知，</p>
-<p>内部实现原理</p>
-<ul>
-<li>KVO是基于runtime机制实现的</li>
-<li>当某个类的属性被第一次观察时，系统会在运行时创建该类的一个派生类，（如Animal类，会生成一个NSKVONotifying_Animal),在该派生类中重写基类中被观察属性的setter方法，在setter方法中实现真正的通知机制</li>
-<li>在runtime中，每个类都有个isa指针，指向当前类，当某个类被观察时，系统会把isa指针指向动态生成的派生类，从而监听的属性的setter方法会被执行</li>
-</ul>
-<p>注册观察者：</p>
-<pre><code>/*observer : 观察的对象
-*keyPath : 被观察对象的属性
-*options : 给你观察键值变化的选择，一遍选择新值和旧值
-*/context : 传输你需要的数据
-- (void)addObserver:(NSObject *)observer forKeyPath:(NSString *)keyPath options:(NSKeyValueObservingOptions)options context:(nullable void *)context;
-</code></pre><p>实现方法：</p>
-<pre><code>//keyPath : 监听的属性
-//change : 属性的变化值
-//context : 上文传的数据
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary&lt;NSKeyValueChangeKey,id&gt; *)change context:(void *)context;
-</code></pre><p>移除</p>
-<pre><code>- (void)removeObserver:(NSObject *)observer forKeyPath:(NSString *)keyPath;
-//监听玩属性后，一定要把观察者给移除，不然可能导致内存泄漏
-</code></pre><p>因为Objc是一门动态语言，把一些工作从编译连接推迟到运行时，所以会有一个运行时系统（runtime system）来执行编译后的代码。它是整个Objc运行框架的一块基石。<a href="http://yulingtianxia.com/blog/2014/11/05/objective-c-runtime/" target="_blank" rel="noopener">runtime</a></p>
-<p><a href="http://tech.glowing.com/cn/implement-kvo/" target="_blank" rel="noopener">如何手动实现KVO</a></p>
-<p>KVC（Key-Value-Coding) 运用了一个isa-swizzling技术.isa-siwizzling就是类型混合指正机制，将两个对象的isa指针相互调换，就是俗称的黑魔法。</p>
-<p>KVC使用</p>
-<ul>
-<li>获取值</li>
-</ul>
-<hr>
-<pre><code>valueForKey: 传入NSString属性的名字。
-
-valueForKeyPath: 属性的路径，xx.xx
-
-valueForUndefinedKey 默认实现是抛出异常，可重写这个函数做错误处理
-</code></pre><ul>
-<li>修改值</li>
-</ul>
-<hr>
-<pre><code>setValue:forKey:
-
-setValue:forKeyPath:
-
-setValue:forUnderfinedKey:
-
-setNilValueForKey: 对非类对象属性设置nil时调用，默认抛出异常。
-</code></pre><h2 id="搜索单值成员"><a href="#搜索单值成员" class="headerlink" title="搜索单值成员"></a>搜索单值成员</h2><ul>
-<li>setValue:forKey:搜索方式</li>
-</ul>
-<ul>
-<li>1、首先搜索setKey:方法。（key指成员变量名，首字母大写）</li>
-<li>2、上面的setter方法没找到，如果类方法accessInstanceVariablesDirectly返回YES。那么按 _key，_isKey，key，iskey的顺序搜索成员名。（NSKeyValueCodingCatogery中实现的类方法，默认实现为返回YES）</li>
-<li>3、如果没有找到成员变量，调用setValue:forUnderfinedKey:</li>
-</ul>
-<p>valueForKey:的搜索方式</p>
-<ul>
-<li>1、首先按getKey，key，isKey的顺序查找getter方法，找到直接调用。如果是BOOL、int等内建值类型，会做NSNumber的转换。</li>
-<li>2、上面的getter没找到，查找countOfKey、objectInKeyAtindex、KeyAtindexes格式的方法。如果countOfKey和另外两个方法中的一个找到，那么就会返回一个可以响应NSArray所有方法的代理集合的NSArray消息方法。</li>
-<li><p>3、还没找到，查找countOfKey、enumeratorOfKey、memberOfKey格式的方法。如果这三个方法都找到，那么就返回一个可以响应NSSet所有方法的代理集合。</p>
-</li>
-<li><p>4、还是没找到，如果类方法accessInstanceVariablesDirectly返回YES。那么按 _key，_isKey，key，iskey的顺序搜索成员名。</p>
-</li>
-<li>5、再没找到，调用valueForUndefinedKey。</li>
-</ul>
-
-          
+            <div class="post-button text-center">
+              <a class="btn" href="/2018/12/13/学习KVO/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+         
+          <!--/noindex-->
         
       
     </div>
@@ -1864,12 +1099,24 @@ setNilValueForKey: 对非类对象属性设置nil时调用，默认抛出异常�
                 
               
 
-              <time title="Created: 2018-12-11 22:10:42 / Modified: 22:16:17" itemprop="dateCreated datePublished" datetime="2018-12-11T22:10:42+08:00">2018-12-11</time>
+              <time title="Created: 2018-12-11 22:10:42" itemprop="dateCreated datePublished" datetime="2018-12-11T22:10:42+08:00">2018-12-11</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-12-22 00:38:49" itemprop="dateModified" datetime="2018-12-22T00:38:49+08:00">2018-12-22</time>
               
             
           </span>
@@ -1903,38 +1150,16 @@ setNilValueForKey: 对非类对象属性设置nil时调用，默认抛出异常�
 
       
         
+          <h1 id="markDown语法"><a href="#markDown语法" class="headerlink" title="markDown语法"></a>markDown语法</h1>
+          <!--noindex-->
           
-            <h1 id="markDown语法"><a href="#markDown语法" class="headerlink" title="markDown语法"></a>markDown语法</h1><h3 id="加载图片"><a href="#加载图片" class="headerlink" title="加载图片"></a>加载图片</h3><pre><code>![图片](https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png)
-</code></pre><p><img src="https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png" alt="图片"></p>
-<h3 id="加载链接"><a href="#加载链接" class="headerlink" title="加载链接"></a>加载链接</h3><pre><code>[链接](http://www.baidu.com)
-</code></pre><p><a href="http://www.baidu.com" target="_blank" rel="noopener">链接</a></p>
-<h3 id="标引"><a href="#标引" class="headerlink" title="标引"></a>标引</h3><p><code>您好</code></p>
-<h3 id="反斜杠"><a href="#反斜杠" class="headerlink" title="反斜杠\"></a>反斜杠\</h3><p>\</p>
-<h3 id="分割线"><a href="#分割线" class="headerlink" title="分割线"></a>分割线</h3><hr>
-<p>大于3*</p>
-<hr>
-<p>大于3-</p>
-<h3 id="区块引用-gt-gt-gt"><a href="#区块引用-gt-gt-gt" class="headerlink" title="区块引用 &gt; &gt;&gt;"></a>区块引用 &gt; &gt;&gt;</h3><blockquote>
-<p>你好这是这个区块引用&gt;</p>
-<blockquote>
-<p>这是一个嵌套引用&gt;&gt;</p>
-</blockquote>
-</blockquote>
-<h3 id="代码块-四个空格"><a href="#代码块-四个空格" class="headerlink" title="代码块 四个空格"></a>代码块 四个空格</h3><pre><code>- (NSMutableArray *)secondSectionDataArray {
-if (!_secondSectionDataArray) {
-_secondSectionDataArray = [[NSMutableArray alloc] init];
-}
-return _secondSectionDataArray;
-}
-</code></pre><h3 id="粗体-文字"><a href="#粗体-文字" class="headerlink" title="粗体 **文字**"></a>粗体 **文字**</h3><p><strong>哈哈哈</strong></p>
-<h3 id="列表"><a href="#列表" class="headerlink" title="列表  -"></a>列表  -</h3><ul>
-<li>1</li>
-<li>2</li>
-<li>3</li>
-<li>4</li>
-</ul>
-
-          
+            <div class="post-button text-center">
+              <a class="btn" href="/2018/12/11/markdown语法/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+         
+          <!--/noindex-->
         
       
     </div>
@@ -2034,12 +1259,24 @@ return _secondSectionDataArray;
                 
               
 
-              <time title="Created: 2018-08-10 00:10:41 / Modified: 00:42:04" itemprop="dateCreated datePublished" datetime="2018-08-10T00:10:41+08:00">2018-08-10</time>
+              <time title="Created: 2018-08-10 00:10:41" itemprop="dateCreated datePublished" datetime="2018-08-10T00:10:41+08:00">2018-08-10</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-12-22 00:38:08" itemprop="dateModified" datetime="2018-12-22T00:38:08+08:00">2018-12-22</time>
               
             
           </span>
@@ -2073,29 +1310,17 @@ return _secondSectionDataArray;
 
       
         
-          
-            <h3 id="iOS开发中图片随便用户的拖拽而变大"><a href="#iOS开发中图片随便用户的拖拽而变大" class="headerlink" title="iOS开发中图片随便用户的拖拽而变大"></a>iOS开发中图片随便用户的拖拽而变大</h3><p>首先先上图看效果，因为不会上传GIF图索，所以只截了个图。在以后开发中也可以使用这种思想。<br><img src="/img/下拉图片变大.png" alt="截图"></p>
+          <h3 id="iOS开发中图片随便用户的拖拽而变大"><a href="#iOS开发中图片随便用户的拖拽而变大" class="headerlink" title="iOS开发中图片随便用户的拖拽而变大"></a>iOS开发中图片随便用户的拖拽而变大</h3><p>首先先上图看效果，因为不会上传GIF图索，所以只截了个图。在以后开发中也可以使用这种思想。<br><img src="/img/下拉图片变大.png" alt="截图"></p>
 <p>如图所示：用户下来的时候图片有一种放大的感觉，在个人中心使用这种情景比较多。</p>
-<h3 id="实现过程"><a href="#实现过程" class="headerlink" title="实现过程"></a>实现过程</h3><hr>
-<ul>
-<li><p>1、一般的<code>ViewController</code>都会被封装在<code>UINavigationController</code>之下，所以我们首先应该把<code>navigationBar</code>给隐藏了。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">self.navigationController.navigationBar.hidden = YES;</span><br><span class="line">//设置状态栏的字体为白色 iOS7之后</span><br><span class="line">[UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>2、配置<code>TableView/CollectionView</code>等，设置代理，正常情况下需要设置<code>tableView</code>的<code>contentInset</code>。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_tableView.contentInset = UIEdgeInsetsMake(imageView。height, 0, 0, 0);</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>3、配置<code>UIImageView</code>，在设置<code>imageView</code>的时候把<code>contentMode</code>设置成<code>UIViewContentModeScaleAspectFill</code>,然后把需要的视图添加到主视图中。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">_header.contentMode = UIViewContentModeScaleAspectFill;</span><br></pre></td></tr></table></figure>
-</li>
-<li><p>4、实现<code>UIScrollViewDelegate</code>中的<code>scrollViewDidScroll</code>方法，通过监听用户的滑动来控制图片的位置和大小。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">CGRect frame = self.header.frame;</span><br><span class="line">CGFloat offsetY = scrollView.contentOffset.y;</span><br><span class="line">NSLog(@<span class="string">"%lf"</span>,offsetY);</span><br><span class="line"><span class="keyword">if</span> (offsetY &lt;= -264) &#123;</span><br><span class="line">frame.size.height = -offsetY;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">frame.origin.y = -264 - offsetY;</span><br><span class="line">&#125;</span><br><span class="line">self.header.frame = frame;</span><br></pre></td></tr></table></figure>
-</li>
-</ul>
-<hr>
-<p>这个就是主要过程，只是简单的demo，布局就使用的绝对布局，大致思路就是如此。</p>
-<h3 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h3><p>在设置状态栏<code>statusBar</code>的时候，使用上面的代码的时候没有效果，在查询完之后才发现需要在项目的<code>Info.plist</code>中添加一个属性<code>View controller-based status bar appearance</code>这个属性默认是<code>YES</code>,当你设置为<code>NO</code>的时候状态栏就可以改变了。<br><img src="/img/设置InfoPlist.png" alt="设置plist中的属性"></p>
-<h1 id="To-Be-a-Confident-Man"><a href="#To-Be-a-Confident-Man" class="headerlink" title="To Be a Confident Man!"></a>To Be a Confident Man!</h1>
+          <!--noindex-->
           
+            <div class="post-button text-center">
+              <a class="btn" href="/2018/08/10/下拉图片变大/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+         
+          <!--/noindex-->
         
       
     </div>
@@ -2212,7 +1437,7 @@ return _secondSectionDataArray;
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-07-31 22:02:29" itemprop="dateModified" datetime="2018-07-31T22:02:29+08:00">2018-07-31</time>
+                <time title="Modified: 2018-12-22 00:37:16" itemprop="dateModified" datetime="2018-12-22T00:37:16+08:00">2018-12-22</time>
               
             
           </span>
@@ -2246,12 +1471,16 @@ return _secondSectionDataArray;
 
       
         
+          <h2 id="首先"><a href="#首先" class="headerlink" title="首先"></a>首先</h2><p>历经了千辛万苦终于把自己的博客给搭建好了，本来想从阿里云上面买个服务器的，看了一下价格，我的钱包不允许我这样做，哈哈哈哈。</p>
+          <!--noindex-->
           
-            <h2 id="首先"><a href="#首先" class="headerlink" title="首先"></a>首先</h2><p>历经了千辛万苦终于把自己的博客给搭建好了，本来想从阿里云上面买个服务器的，看了一下价格，我的钱包不允许我这样做，哈哈哈哈。</p>
-<h3 id="然后"><a href="#然后" class="headerlink" title="然后"></a>然后</h3><p>搭建博客非常感谢前辈们的blog,让我一步步搭建完成，首先推荐这位大佬的blog，<a href="https://www.cnblogs.com/jackyroc/p/7681938.html" target="_blank" rel="noopener">搭建个人博客</a></p>
-<h4 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h4><p>就到这吧。最近在学weex,有时间写点关于weex的文章。</p>
-
-          
+            <div class="post-button text-center">
+              <a class="btn" href="/2018/07/30/我的博客/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+         
+          <!--/noindex-->
         
       
     </div>
@@ -2355,6 +1584,22 @@ return _secondSectionDataArray;
             
 
             
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-12-22 00:38:39" itemprop="dateModified" datetime="2018-12-22T00:38:39+08:00">2018-12-22</time>
+              
+            
           </span>
 
           
@@ -2386,18 +1631,16 @@ return _secondSectionDataArray;
 
       
         
+          <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
+          <!--noindex-->
           
-            <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
-
-          
+            <div class="post-button text-center">
+              <a class="btn" href="/2018/07/26/hello-world/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+         
+          <!--/noindex-->
         
       
     </div>

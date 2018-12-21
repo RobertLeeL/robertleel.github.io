@@ -104,18 +104,18 @@
 
 
 
-  <meta name="description" content="KVO（Key-Value-Observing）——观察者模式，当被观察的对象的某个属性发生变化时，观察者对象会获得通知， 内部实现原理  KVO是基于runtime机制实现的 当某个类的属性被第一次观察时，系统会在运行时创建该类的一个派生类，（如Animal类，会生成一个NSKVONotifying_Animal),在该派生类中重写基类中被观察属性的setter方法，在setter方法中实现真正">
+  <meta name="description" content="KVO（Key-Value-Observing）——观察者模式，当被观察的对象的某个属性发生变化时，观察者对象会获得通知，">
 <meta name="keywords" content="blogs">
 <meta property="og:type" content="article">
 <meta property="og:title" content="学习KVO">
 <meta property="og:url" content="http://robertleeng.com/2018/12/13/学习KVO/index.html">
 <meta property="og:site_name" content="Robert Lee">
-<meta property="og:description" content="KVO（Key-Value-Observing）——观察者模式，当被观察的对象的某个属性发生变化时，观察者对象会获得通知， 内部实现原理  KVO是基于runtime机制实现的 当某个类的属性被第一次观察时，系统会在运行时创建该类的一个派生类，（如Animal类，会生成一个NSKVONotifying_Animal),在该派生类中重写基类中被观察属性的setter方法，在setter方法中实现真正">
+<meta property="og:description" content="KVO（Key-Value-Observing）——观察者模式，当被观察的对象的某个属性发生变化时，观察者对象会获得通知，">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-12-13T13:06:51.406Z">
+<meta property="og:updated_time" content="2018-12-21T16:39:44.992Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="学习KVO">
-<meta name="twitter:description" content="KVO（Key-Value-Observing）——观察者模式，当被观察的对象的某个属性发生变化时，观察者对象会获得通知， 内部实现原理  KVO是基于runtime机制实现的 当某个类的属性被第一次观察时，系统会在运行时创建该类的一个派生类，（如Animal类，会生成一个NSKVONotifying_Animal),在该派生类中重写基类中被观察属性的setter方法，在setter方法中实现真正">
+<meta name="twitter:description" content="KVO（Key-Value-Observing）——观察者模式，当被观察的对象的某个属性发生变化时，观察者对象会获得通知，">
 
 
 
@@ -343,12 +343,24 @@
                 
               
 
-              <time title="Created: 2018-12-13 21:03:11 / Modified: 21:06:51" itemprop="dateCreated datePublished" datetime="2018-12-13T21:03:11+08:00">2018-12-13</time>
+              <time title="Created: 2018-12-13 21:03:11" itemprop="dateCreated datePublished" datetime="2018-12-13T21:03:11+08:00">2018-12-13</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-12-22 00:39:44" itemprop="dateModified" datetime="2018-12-22T00:39:44+08:00">2018-12-22</time>
               
             
           </span>
@@ -382,6 +394,7 @@
 
       
         <p>KVO（Key-Value-Observing）——观察者模式，当被观察的对象的某个属性发生变化时，观察者对象会获得通知，</p>
+<a id="more"></a>
 <p>内部实现原理</p>
 <ul>
 <li>KVO是基于runtime机制实现的</li>

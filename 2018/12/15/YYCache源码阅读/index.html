@@ -104,21 +104,21 @@
 
 
 
-  <meta name="description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
+  <meta name="description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。">
 <meta name="keywords" content="blogs">
 <meta property="og:type" content="article">
 <meta property="og:title" content="YYCache源码阅读">
 <meta property="og:url" content="http://robertleeng.com/2018/12/15/YYCache源码阅读/index.html">
 <meta property="og:site_name" content="Robert Lee">
-<meta property="og:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
+<meta property="og:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/YYCache类.png">
 <meta property="og:image" content="https://user-gold-cdn.xitu.io/2018/1/22/1611c66be5e027e5?imageView2/0/w/1280/h/960/format/webp/ignore-error/1">
 <meta property="og:image" content="http://robertleeng.com/img/YYCacheMap中插入node过程.png">
-<meta property="og:updated_time" content="2018-12-19T12:45:42.508Z">
+<meta property="og:updated_time" content="2018-12-21T16:39:02.112Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="YYCache源码阅读">
-<meta name="twitter:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。 YYCache使用&amp;#160;&amp;#160;YYCache提供了同步和异步的方式进行数据存储， NSString *url = @&amp;qu">
+<meta name="twitter:description" content="前言&amp;#160;&amp;#160;&amp;#160;&amp;#160;最近在看缓存相关知识，所以就阅读了YYCache源码，YYCache是ibireme开源的一个线程安全的高性能缓存框架。YYCache设计思路，在YYCache设计思路大佬博客中也有提到，感兴趣的可以去膜拜一波。">
 <meta name="twitter:image" content="http://robertleeng.com/img/YYCache类.png">
 
 
@@ -364,7 +364,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-19 20:45:42" itemprop="dateModified" datetime="2018-12-19T20:45:42+08:00">2018-12-19</time>
+                <time title="Modified: 2018-12-22 00:39:02" itemprop="dateModified" datetime="2018-12-22T00:39:02+08:00">2018-12-22</time>
               
             
           </span>
@@ -398,6 +398,7 @@
 
       
         <h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>&#160;&#160;&#160;&#160;最近在看缓存相关知识，所以就阅读了<a href="https://github.com/ibireme/YYCache" target="_blank" rel="noopener">YYCache</a>源码，<code>YYCache</code>是<a href="https://blog.ibireme.com/" target="_blank" rel="noopener">ibireme</a>开源的一个线程安全的高性能缓存框架。YYCache设计思路，在<a href="https://blog.ibireme.com/2015/10/26/yycache/" target="_blank" rel="noopener">YYCache设计思路</a>大佬博客中也有提到，感兴趣的可以去膜拜一波。</p>
+<a id="more"></a>
 <h3 id="YYCache使用"><a href="#YYCache使用" class="headerlink" title="YYCache使用"></a>YYCache使用</h3><p>&#160;&#160;<code>YYCache</code>提供了同步和异步的方式进行数据存储，</p>
 <pre><code>NSString *url = @&quot;https://www.baidu.com&quot;;
 NSString *key = @&quot;cacheKey&quot;;

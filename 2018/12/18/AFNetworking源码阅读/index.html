@@ -104,19 +104,19 @@
 
 
 
-  <meta name="description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系： 我们首先介绍一下各个类：">
+  <meta name="description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
 <meta name="keywords" content="0.1">
 <meta property="og:type" content="article">
 <meta property="og:title" content="AFNetworking源码阅读">
 <meta property="og:url" content="http://robertleeng.com/2018/12/18/AFNetworking源码阅读/index.html">
 <meta property="og:site_name" content="Robert Lee">
-<meta property="og:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系： 我们首先介绍一下各个类：">
+<meta property="og:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
-<meta property="og:updated_time" content="2018-12-20T17:18:56.462Z">
+<meta property="og:updated_time" content="2018-12-21T16:38:29.981Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
-<meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。  在介绍AFNetworking之前，先看一看苹果提供的原生网络框架的使用。下面这张图介绍了原生提供网络编程的类之间的关系： 我们首先介绍一下各个类：">
+<meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
 <meta name="twitter:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
 
 
@@ -362,7 +362,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-21 01:18:56" itemprop="dateModified" datetime="2018-12-21T01:18:56+08:00">2018-12-21</time>
+                <time title="Modified: 2018-12-22 00:38:29" itemprop="dateModified" datetime="2018-12-22T00:38:29+08:00">2018-12-22</time>
               
             
           </span>
@@ -396,6 +396,7 @@
 
       
         <h3 id="AFNetworking-3-2-1"><a href="#AFNetworking-3-2-1" class="headerlink" title="AFNetworking 3.2.1"></a>AFNetworking 3.2.1</h3><p>如今使用OC进行开发iOS开发的可能都用过<a href="https://github.com/AFNetworking/AFNetworking" target="_blank" rel="noopener">AFNetworking</a>网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看<code>AFNetworking</code>是如何实现的。</p>
+<a id="more"></a>
 <hr>
 <p>在介绍<code>AFNetworking</code>之前，先看一看苹果提供的原生网络框架的使用。<br>下面这张图介绍了原生提供网络编程的类之间的关系：<br><img src="/img/系统网络编程类关系.png" alt="截图"></p>
 <p>我们首先介绍一下各个类：</p>
