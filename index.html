@@ -300,6 +300,314 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://robertleeng.com/2018/12/24/iOS多线程开发-NSOperation/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Robert Lee">
+      <meta itemprop="description" content="Robert Lee的博客">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Robert Lee">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2018/12/24/iOS多线程开发-NSOperation/" class="post-title-link" itemprop="http://robertleeng.com/index.html">iOS多线程开发_NSOperation</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2018-12-24 22:57:11 / Modified: 23:06:51" itemprop="dateCreated datePublished" datetime="2018-12-24T22:57:11+08:00">2018-12-24</time>
+            
+
+            
+              
+
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id="iOS多线程-：NSOperation、NSOperationQueue"><a href="#iOS多线程-：NSOperation、NSOperationQueue" class="headerlink" title="iOS多线程 ：NSOperation、NSOperationQueue"></a>iOS多线程 ：NSOperation、NSOperationQueue</h3><p><code>NSOperation</code>和<code>NSOperationQueue</code>是苹果公司提供的一套解决多线程开发的方案。也是基于GCD进行开发的。但是和GCD不同的是，<code>NSOperation</code>和<code>NSOperationQueue</code>是完全面向对象的，都说比GCD跟简单易用，反正我不这么觉得。。。。。但是代码可读性高是真的。<code>SDWebImage</code>开源框架中的多线程就是使用自定义<code>NSOperation</code>和<code>NSOperationQueue</code>实现的。那可是真的难以理解呀，看的头皮发麻。</p>
+<p><code>NSOperation</code>相对于GCD好处：</p>
+<blockquote>
+<p>1、提供了更多的函数，方便使用</p>
+<p>2、直接使用addDependency：建立各个NSOperation之间的关系</p>
+<p>3、可以使用kvo监听操作执行的状态。</p>
+<blockquote>
+<p>@property (readonly, getter=isCancelled) BOOL cancelled;<br>@property (readonly, getter=isExecuting) BOOL executing;<br>@property (readonly, getter=isFinished) BOOL finished;</p>
+</blockquote>
+<p>4、方便取消执行操作</p>
+<blockquote>
+<ul>
+<li>(void)cancel;</li>
+</ul>
+</blockquote>
+</blockquote>
+<h3 id="NSOperation"><a href="#NSOperation" class="headerlink" title="NSOperation"></a>NSOperation</h3><h4 id="操作"><a href="#操作" class="headerlink" title="操作"></a>操作</h4><p>线程中执行的代码，在GCD中，是放在block中的代码。一般我们不直接使用NSOperation操作，通常有三种使用方法</p>
+<ul>
+<li>使用子类 NSInvocationOperation</li>
+<li>使用子类 NSBlockOperation</li>
+<li>自定义集成自NSOperation的子类，通过实现内部想要方法进行封装</li>
+</ul>
+<h3 id="NSOperationQueue"><a href="#NSOperationQueue" class="headerlink" title="NSOperationQueue"></a>NSOperationQueue</h3><h4 id="操作队列"><a href="#操作队列" class="headerlink" title="操作队列"></a>操作队列</h4><p>也就是存放操作的队列，可以通过设置<strong>最大并发操作数</strong> 来控制并发、串行，根据操作的优先级进行操作。<br>NSOperationQueue提供了两种不同类型的队列：</p>
+<ul>
+<li>主队列 ： 运行在主线程上</li>
+<li>自定义队列 ： 在后台线程中执行</li>
+</ul>
+<h3 id="NSOperation、NSOperationQueue"><a href="#NSOperation、NSOperationQueue" class="headerlink" title="NSOperation、NSOperationQueue"></a>NSOperation、NSOperationQueue</h3><p>使用方法分为三步：</p>
+<ul>
+<li>1、创建操作，把要执行的操作封装到一个NSOperation对象</li>
+<li>2、创建队列，根据需求创建需要的队列</li>
+<li>3、 将操作加入到队列中。</li>
+</ul>
+<h4 id="NSInvocationOperation使用方法"><a href="#NSInvocationOperation使用方法" class="headerlink" title="NSInvocationOperation使用方法"></a>NSInvocationOperation使用方法</h4><pre><code>//初始化操作对象
+NSInvocationOperation *operation2 = [[NSInvocationOperation alloc]initWithTarget:self selector:@selector(task) object:nil];
+    [operation2 start];
+
+- (void)task{
+for (int i = 0; i &lt; 3; i++) {
+    NSLog(@&quot;%@ ： %d&quot;,[NSThread currentThread],i);
+    }
+}
+
+//输出
+&lt;NSThread: 0x60400006d400&gt;{number = 1, name = main} ： 0
+&lt;NSThread: 0x60400006d400&gt;{number = 1, name = main} ： 1
+&lt;NSThread: 0x60400006d400&gt;{number = 1, name = main} ： 2
+</code></pre><hr>
+<pre><code>//初始化主队列 输出结果和上面相同，这里就不写输出结果了
+NSOperationQueue *queue2 = [NSOperationQueue mainQueue];
+
+NSInvocationOperation *operation2 = [[NSInvocationOperation alloc]initWithTarget:self selector:@selector(task) object:nil];
+//    [operation2 start];
+
+[queue2 addOperation:operation2];
+</code></pre><hr>
+<pre><code>//初始化自定义操作队列，可以看到输出：操作是在后台线程操作
+ NSOperationQueue *queue2 = [[NSOperationQueue alloc]init];;
+
+NSInvocationOperation *operation2 = [[NSInvocationOperation alloc]initWithTarget:self selector:@selector(task) object:nil];
+//    [operation2 start];
+
+[queue2 addOperation:operation2];
+
+//输出
+&lt;NSThread: 0x600000462240&gt;{number = 3, name = (null)} ： 0
+&lt;NSThread: 0x600000462240&gt;{number = 3, name = (null)} ： 1
+&lt;NSThread: 0x600000462240&gt;{number = 3, name = (null)} ： 2
+</code></pre><hr>
+<pre><code>//添加两个操作到队列中，task方法实现相同
+NSOperationQueue *queue2 = [[NSOperationQueue alloc]init];;
+NSInvocationOperation *operation2 = [[NSInvocationOperation alloc]initWithTarget:self selector:@selector(task) object:nil];
+NSInvocationOperation *operation3 = [[NSInvocationOperation alloc]initWithTarget:self selector:@selector(task2) object:nil];
+
+[queue2 addOperation:operation2];
+[queue2 addOperation:operation3];
+
+//输出，新建了2个后台线程进行操作
+&lt;NSThread: 0x60000027e600&gt;{number = 3, name = (null)} ： 0
+&lt;NSThread: 0x60400046cc80&gt;{number = 4, name = (null)} ： 0
+&lt;NSThread: 0x60000027e600&gt;{number = 3, name = (null)} ： 1
+&lt;NSThread: 0x60400046cc80&gt;{number = 4, name = (null)} ： 1
+&lt;NSThread: 0x60000027e600&gt;{number = 3, name = (null)} ： 2
+ &lt;NSThread: 0x60400046cc80&gt;{number = 4, name = (null)} ： 2
+</code></pre><p>可以看出：</p>
+<ul>
+<li>在主队列中添加操作，是在主线程中执行操作</li>
+<li>直接start操作，默认也是在主线程执行</li>
+<li>在自定义队列中添加操作，是在后台线程中执行操作</li>
+</ul>
+<h4 id="NSBlockOperation"><a href="#NSBlockOperation" class="headerlink" title="NSBlockOperation"></a>NSBlockOperation</h4><p><code>NSBlockOperation</code>只介绍过程 输出结果就不贴出来了，太冗长。</p>
+<pre><code>//直接执行操作 默认不开启新线程执行操作
+NSBlockOperation *operation = [NSBlockOperation blockOperationWithBlock:^{
+        for (int i = 0; i &lt; 3; i++) {
+            NSLog(@&quot;%@ ： %d&quot;,[NSThread currentThread],i);
+        }
+    }];
+[operation start];
+</code></pre><p><code>NSBlockOperation</code>是可以通过方法<code>addExecutionBlock</code>添加额外操作。添加的操作和<code>blockOperationWithBlock</code>初始化方法中添加的操作可以并发执行，不在相同线程。</p>
+<pre><code>//操作中添加了2个额外操作
+NSBlockOperation *operation = [NSBlockOperation blockOperationWithBlock:^{
+    NSLog(@&quot;1: %@&quot;,[NSThread currentThread]);
+}];
+[operation addExecutionBlock:^{
+    NSLog(@&quot;2: %@&quot;,[NSThread currentThread]);
+}];
+
+[operation addExecutionBlock:^{
+    NSLog(@&quot;3: %@&quot;, [NSThread currentThread]);
+}];
+
+[operation start];
+
+//输出结果：可以看出开辟了新线程执行操作
+&lt;NSThread: 0x60400027f080&gt;{number = 3, name = (null)}
+&lt;NSThread: 0x60000026c500&gt;{number = 4, name = (null)}
+&lt;NSThread: 0x60400006c300&gt;{number = 1, name = main}
+</code></pre><hr>
+<pre><code>//创建自定义操作队列
+NSOperationQueue *queue1 = [[NSOperationQueue alloc] init];
+
+NSBlockOperation *operation = [NSBlockOperation blockOperationWithBlock:^{
+    NSLog(@&quot;1: %@&quot;,[NSThread currentThread]);
+}];
+NSBlockOperation *operation2 = [NSBlockOperation blockOperationWithBlock:^{
+    NSLog(@&quot;2: %@&quot;,[NSThread currentThread]);
+}];
+NSBlockOperation *operation3 = [NSBlockOperation blockOperationWithBlock:^{
+    NSLog(@&quot;3: %@&quot;,[NSThread currentThread]);
+}];
+
+[queue1 addOperation:operation];
+[queue1 addOperation:operation2];
+[queue1 addOperation:operation3];
+
+//输出结果：证明开辟了新线程执行操作
+2: &lt;NSThread: 0x604000464700&gt;{number = 4, name = (null)}
+3: &lt;NSThread: 0x6040004646c0&gt;{number = 3, name = (null)}
+1: &lt;NSThread: 0x6040004647c0&gt;{number = 5, name = (null)}
+
+
+//当初始化主队列执行操作时：
+NSOperationQueue *queue1 = [NSOperationQueue mainQueue];
+
+//输出结果：未开辟新线程
+1: &lt;NSThread: 0x604000075ac0&gt;{number = 1, name = main}
+2: &lt;NSThread: 0x604000075ac0&gt;{number = 1, name = main}
+3: &lt;NSThread: 0x604000075ac0&gt;{number = 1, name = main}
+</code></pre><h3 id="自定义Operation"><a href="#自定义Operation" class="headerlink" title="自定义Operation"></a>自定义Operation</h3><p><code>SDWebImage</code>就是自定义集成自<code>NSOperation</code>队列进行后台线程下载图片，我会在阅读<code>SDWebImag</code>源码中详细介绍。</p>
+<hr>
+<p>在<code>NSOperation</code>中，可以添加操作依赖，通过依赖关系来决定执行顺序。<br>苹果提供了方法来添加依赖关系：</p>
+<pre><code>//添加依赖，等到操作op执行完再执行相关操作
+- (void)addDependency:(NSOperation *)op;
+//移除依赖
+- (void)removeDependency:(NSOperation *)op;
+</code></pre><p>在<code>NSOperationQueue</code>队列中也可以添加依赖，放入如下：</p>
+<pre><code>- (void)addOperation:(NSOperation *)op;
+- (void)addOperations:(NSArray&lt;NSOperation *&gt; *)ops waitUntilFinished:(BOOL)wait;
+</code></pre><p><code>NSOperation</code>还提供了操作优先级<code>queuePriority</code>，优先级只适用于桐一个操作队列，不适用不是相同操作队列的操作。<br>创建操作对象时，默认的优先级为：<code>NSOperationQueuePriorityNormal</code>。开发者可以自定义操作对象的优先级。</p>
+<pre><code>typedef NS_ENUM(NSInteger, NSOperationQueuePriority) {
+    NSOperationQueuePriorityVeryLow = -8L,
+    NSOperationQueuePriorityLow = -4L,
+    NSOperationQueuePriorityNormal = 0,
+    NSOperationQueuePriorityHigh = 4,
+    NSOperationQueuePriorityVeryHigh = 8
+};
+</code></pre><p>操作对象的执行顺序通过操作之间的优先级决定。（前提是各个操作之间没有添加依赖关系，如果添加了依赖关系，等依赖关系执行完之后才能执行）。</p>
+
+          
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://robertleeng.com/2018/12/18/AFNetworking源码阅读/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -1723,7 +2031,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-count">10</span>
                     <span class="site-state-item-name">posts</span>
                   </a>
                 </div>
