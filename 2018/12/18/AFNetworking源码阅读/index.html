@@ -113,7 +113,8 @@
 <meta property="og:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
-<meta property="og:updated_time" content="2018-12-25T14:02:09.173Z">
+<meta property="og:image" content="http://robertleeng.com/img/NSURLSessionTask.png">
+<meta property="og:updated_time" content="2018-12-25T15:52:07.787Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
@@ -362,7 +363,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-25 22:02:09" itemprop="dateModified" datetime="2018-12-25T22:02:09+08:00">2018-12-25</time>
+                <time title="Modified: 2018-12-25 23:52:07" itemprop="dateModified" datetime="2018-12-25T23:52:07+08:00">2018-12-25</time>
               
             
           </span>
@@ -537,7 +538,14 @@ NSLog(@&quot;response:%@&quot;,response);
 - (nullable instancetype)initWithRequest:(NSURLRequest *)request delegate:(nullable id)delegate;
 
 + (nullable NSURLConnection*)connectionWithRequest:(NSURLRequest *)request delegate:(nullable id)delegate;
-</code></pre><h3 id="NSURLSession"><a href="#NSURLSession" class="headerlink" title="NSURLSession"></a>NSURLSession</h3>
+</code></pre><h3 id="NSURLSession"><a href="#NSURLSession" class="headerlink" title="NSURLSession"></a>NSURLSession</h3><p><code>NSURLSession</code>是iOS7中的网络接口。它与<code>NSURLConnection</code>不同的是支持后台下载操作，以及断点续传功能。如上面的结构图所示，先来看看上面提到的类的作用</p>
+<ul>
+<li><code>NSURLSessionCofiguration</code> : 定义和配置会话，配置有：Cookie、安全性、缓存策略等等。</li>
+<li><code>NSURLSessionDataTask</code>、<code>NSURLSessionDownloadTask</code>、<code>NSURLSessionUploadTask</code> ： 主要负责处理数据的加载，和服务端之间的数据下载和上传任务。他们的<code>supreClass</code>都是<code>NSURLSessionTask</code>,<code>NSURLSessionTask</code>是一个抽象类。<br>它们之间的关系如图所示：</li>
+</ul>
+<p><img src="/img/NSURLSessionTask.png" alt="截图"></p>
+<p>从图中可以看出来，<code>NSURLSessionDataTask</code>和<code>NSURLSessionDownloadTask</code>继承自<code>NSURLSessionTask</code>，而<code>NSURLSessionUploadTask</code>继承自<code>NSURLSessionDataTask</code>。</p>
+
       
     </div>
 
