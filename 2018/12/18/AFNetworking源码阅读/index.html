@@ -113,7 +113,7 @@
 <meta property="og:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
-<meta property="og:updated_time" content="2018-12-21T16:38:29.981Z">
+<meta property="og:updated_time" content="2018-12-25T14:02:09.173Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
@@ -362,7 +362,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-22 00:38:29" itemprop="dateModified" datetime="2018-12-22T00:38:29+08:00">2018-12-22</time>
+                <time title="Modified: 2018-12-25 22:02:09" itemprop="dateModified" datetime="2018-12-25T22:02:09+08:00">2018-12-25</time>
               
             
           </span>
@@ -529,7 +529,15 @@ NSLog(@&quot;response:%@&quot;,response);
 
 //服务器返回的数据已经完全接受时调用
 - (void)connectionDidFinishLoading:(NSURLConnection *)connection;
-</code></pre>
+</code></pre><p><code>NSURLConnection</code>类提供了3个方法。</p>
+<pre><code>//三种方法的第一个参数都是一个请求，第二个为代理，第一个方法的第三个参数表示是否立即请求，若设置为NO,则需要调用start方法
+
+- (nullable instancetype)initWithRequest:(NSURLRequest *)request delegate:(nullable id)delegate startImmediately:(BOOL)startImmediately;
+
+- (nullable instancetype)initWithRequest:(NSURLRequest *)request delegate:(nullable id)delegate;
+
++ (nullable NSURLConnection*)connectionWithRequest:(NSURLRequest *)request delegate:(nullable id)delegate;
+</code></pre><h3 id="NSURLSession"><a href="#NSURLSession" class="headerlink" title="NSURLSession"></a>NSURLSession</h3>
       
     </div>
 
@@ -699,7 +707,7 @@ NSLog(@&quot;response:%@&quot;,response);
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AFNetworking-3-2-1"><span class="nav-number">1.</span> <span class="nav-text">AFNetworking 3.2.1</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDelegate"><span class="nav-number">1.1.</span> <span class="nav-text">NSURLConnectionDelegate</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDataDelegate"><span class="nav-number">1.2.</span> <span class="nav-text">NSURLConnectionDataDelegate</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AFNetworking-3-2-1"><span class="nav-number">1.</span> <span class="nav-text">AFNetworking 3.2.1</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDelegate"><span class="nav-number">1.1.</span> <span class="nav-text">NSURLConnectionDelegate</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDataDelegate"><span class="nav-number">1.2.</span> <span class="nav-text">NSURLConnectionDataDelegate</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSURLSession"><span class="nav-number">2.</span> <span class="nav-text">NSURLSession</span></a></li></ol></div>
             
 
           </div>
