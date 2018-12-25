@@ -104,18 +104,20 @@
 
 
 
-  <meta name="description" content="Robert Lee的博客">
+  <meta name="description" content="SDWebImage源码阅读SDWebImage实现了一个异步下载图片并且支持缓存的库。 阅读的SDWebImage版本为5.0.0-beta3。">
 <meta name="keywords" content="blogs">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SDWebImage源码阅读">
 <meta property="og:url" content="http://robertleeng.com/2018/12/18/SDWebImage源码阅读/index.html">
 <meta property="og:site_name" content="Robert Lee">
-<meta property="og:description" content="Robert Lee的博客">
+<meta property="og:description" content="SDWebImage源码阅读SDWebImage实现了一个异步下载图片并且支持缓存的库。 阅读的SDWebImage版本为5.0.0-beta3。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-12-17T16:46:39.035Z">
+<meta property="og:image" content="https://user-gold-cdn.xitu.io/2017/12/25/1608bf72cff0b2e1?imageslim">
+<meta property="og:updated_time" content="2018-12-25T13:05:27.254Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="SDWebImage源码阅读">
-<meta name="twitter:description" content="Robert Lee的博客">
+<meta name="twitter:description" content="SDWebImage源码阅读SDWebImage实现了一个异步下载图片并且支持缓存的库。 阅读的SDWebImage版本为5.0.0-beta3。">
+<meta name="twitter:image" content="https://user-gold-cdn.xitu.io/2017/12/25/1608bf72cff0b2e1?imageslim">
 
 
 
@@ -347,6 +349,22 @@
             
 
             
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-12-25 21:05:27" itemprop="dateModified" datetime="2018-12-25T21:05:27+08:00">2018-12-25</time>
+              
+            
           </span>
 
           
@@ -377,7 +395,418 @@
       
 
       
-        
+        <h1 id="SDWebImage源码阅读"><a href="#SDWebImage源码阅读" class="headerlink" title="SDWebImage源码阅读"></a>SDWebImage源码阅读</h1><p><a href="https://github.com/SDWebImage/SDWebImage" target="_blank" rel="noopener">SDWebImage</a>实现了一个异步下载图片并且支持缓存的库。 阅读的SDWebImage版本为<code>5.0.0-beta3</code>。</p>
+<a id="more"></a>
+<h3 id="架构调用流程图"><a href="#架构调用流程图" class="headerlink" title="架构调用流程图"></a>架构调用流程图</h3><blockquote>
+<p>流程图来自<a href="https://juejin.im/post/5a4080d16fb9a0451969d0aa" target="_blank" rel="noopener">J_Knight_</a>这篇文章。非常感谢~</p>
+</blockquote>
+<p><img src="https://user-gold-cdn.xitu.io/2017/12/25/1608bf72cff0b2e1?imageslim" alt="流程图"> </p>
+<p><code>SDWebImageDownloader</code>类负责图片的下载；<code>SDWebImageCache</code>类负责图片的缓存，可以进行缓存的添加删除，查询；<code>SDWebImageManager</code>是这个框架的核心类，主要负责<code>SDWebImageDownloader</code>和<code>SDWebImageCache</code>。</p>
+<h3 id="SDWebImage简单使用"><a href="#SDWebImage简单使用" class="headerlink" title="SDWebImage简单使用"></a>SDWebImage简单使用</h3><p>&nbsp;&nbsp;&nbsp;&nbsp;在使用<code>SDWebImage</code>都是从<code>UIImageView+WebCache</code>这个分类进行设置<code>UIImageView</code>的图片。使用大致如下：</p>
+<p>//首先定义一个UIImageView然后为imageView设置图片。<br>UIImageView *image = [[UIImageView alloc] initWithFrame:CGRectMake(100, 100, 100, 100)];<br>image.contentMode = UIViewContentModeScaleAspectFill;<br>[image sd_setImageWithURL:[NSURL URLWithString:@”<a href="https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png&quot;]]" target="_blank" rel="noopener">https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png&quot;]]</a>;<br>[self.view addSubview:image];</p>
+<p><code>UIImageView+WebCache</code>分类中，提供了一系列方法进行图片的下载和设置。</p>
+<p>/<em>这些方法都会走到最后一个设置方法 所以就在这里介绍几个参数
+</em>url : 图片地址<br><em>placeholder : 占位图
+</em>options : 下载选项。可以设置下载图片时的规则<br><em>completedBlock : 设置完图片之后的回调
+</em>context : 上下文包含执行指定更改或进程的不同选项</p>
+<ul>
+<li>progressBlock : 下载过程的回调<br>*/</li>
+</ul>
+<ul>
+<li>(void)sd_setImageWithURL:(nullable NSURL *)url;</li>
+<li></li>
+<li><p>(void)sd_setImageWithURL:(nullable NSURL <em>)url<br>placeholderImage:(nullable UIImage </em>)placeholder;</p>
+</li>
+<li><p>(void)sd_setImageWithURL:(nullable NSURL <em>)url<br>placeholderImage:(nullable UIImage </em>)placeholder<br>options:(SDWebImageOptions)options;</p>
+</li>
+<li><p>(void)sd_setImageWithURL:(nullable NSURL <em>)url<br>placeholderImage:(nullable UIImage </em>)placeholder<br>options:(SDWebImageOptions)options<br>context:(nullable SDWebImageContext *)context;</p>
+</li>
+<li><p>(void)sd_setImageWithURL:(nullable NSURL *)url<br>completed:(nullable SDExternalCompletionBlock)completedBlock;</p>
+</li>
+<li><p>(void)sd_setImageWithURL:(nullable NSURL <em>)url<br>placeholderImage:(nullable UIImage </em>)placeholder<br>completed:(nullable SDExternalCompletionBlock)completedBlock;</p>
+</li>
+<li><p>(void)sd_setImageWithURL:(nullable NSURL <em>)url<br>placeholderImage:(nullable UIImage </em>)placeholder<br>options:(SDWebImageOptions)options<br>completed:(nullable SDExternalCompletionBlock)completedBlock;</p>
+</li>
+<li><p>(void)sd_setImageWithURL:(nullable NSURL <em>)url<br>placeholderImage:(nullable UIImage </em>)placeholder<br>options:(SDWebImageOptions)options<br>progress:(nullable SDImageLoaderProgressBlock)progressBlock<br>completed:(nullable SDExternalCompletionBlock)completedBlock;</p>
+</li>
+<li><p>(void)sd_setImageWithURL:(nullable NSURL <em>)url<br>placeholderImage:(nullable UIImage </em>)placeholder<br>options:(SDWebImageOptions)options<br>context:(nullable SDWebImageContext *)context<br>progress:(nullable SDImageLoaderProgressBlock)progressBlock<br>completed:(nullable SDExternalCompletionBlock)completedBlock;</p>
+</li>
+</ul>
+<p>让我们看一下方法的实现：</p>
+<ul>
+<li>(void)sd_setImageWithURL:(nullable NSURL <em>)url<br>placeholderImage:(nullable UIImage </em>)placeholder<br>options:(SDWebImageOptions)options<br>context:(nullable SDWebImageContext <em>)context<br>progress:(nullable SDImageLoaderProgressBlock)progressBlock<br>completed:(nullable SDExternalCompletionBlock)completedBlock {<br>[self sd_internalSetImageWithURL:url<br>placeholderImage:placeholder<br>options:options<br>context:context<br>setImageBlock:nil<br>progress:progressBlock<br>completed:^(UIImage </em> _Nullable image, NSData <em> _Nullable data, NSError </em> _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {<br>if (completedBlock) {<br>completedBlock(image, error, cacheType, imageURL);<br>}<br>}];<br>}</li>
+</ul>
+<p>在这个方法中，调用了另外一个方法，这个方法又调用了<code>UIView+WebCache</code>中的方法，为啥这样做，我觉得应该是<code>SDWebImage</code>也可以为<code>UIButton</code>设置图片。所以在父类的父类中统一调用。</p>
+<p>接下来我们来看<code>UIView+WebCache</code>中是如何实现下载过程，</p>
+<ul>
+<li>(void)sd_internalSetImageWithURL:(nullable NSURL <em>)url<br>placeholderImage:(nullable UIImage </em>)placeholder<br>options:(SDWebImageOptions)options<br>context:(nullable SDWebImageContext <em>)context<br>setImageBlock:(nullable SDSetImageBlock)setImageBlock<br>progress:(nullable SDImageLoaderProgressBlock)progressBlock<br>completed:(nullable SDInternalCompletionBlock)completedBlock {<br>context = [context copy]; // copy to avoid mutable object<br>NSString </em>validOperationKey = context[SDWebImageContextSetImageOperationKey];<br>if (!validOperationKey) {<br>//UIImageView  OR UIButton<br>validOperationKey = NSStringFromClass([self class]);<br>}<br>//1、<strong>*</strong>先取消当前正在进行的异步下载操作<br>[self sd_cancelImageLoadOperationWithKey:validOperationKey];<br>self.sd_imageURL = url;</li>
+</ul>
+<p>if (!(options &amp; SDWebImageDelayPlaceholder)) {<br>//2、<strong>*</strong>异步添加占位图<br>dispatch_main_async_safe(^{<br>[self sd_setImage:placeholder imageData:nil basedOnClassOrViaCustomSetImageBlock:setImageBlock cacheType:SDImageCacheTypeNone imageURL:url];<br>});<br>}</p>
+<p>if (url) {<br>// reset the progress<br>self.sd_imageProgress.totalUnitCount = 0;<br>self.sd_imageProgress.completedUnitCount = 0;</p>
+<p>// check and start image indicator<br>[self sd_startImageIndicator];<br>id<sdwebimageindicator> imageIndicator = self.sd_imageIndicator;</sdwebimageindicator></p>
+<p>SDWebImageManager *manager = context[SDWebImageContextCustomManager];<br>if (!manager) {<br>manager = [SDWebImageManager sharedManager];<br>}</p>
+<p><strong>weak </strong>typeof(self)wself = self;<br>SDImageLoaderProgressBlock combinedProgressBlock = ^(NSInteger receivedSize, NSInteger expectedSize, NSURL <em> _Nullable targetURL) {<br><strong>strong </strong>typeof (wself) sself = wself;<br>NSProgress </em>imageProgress = sself.sd_imageProgress;<br>imageProgress.totalUnitCount = expectedSize;<br>imageProgress.completedUnitCount = receivedSize;<br>if ([imageIndicator respondsToSelector:@selector(updateIndicatorProgress:)]) {<br>double progress = imageProgress.fractionCompleted;<br>dispatch_async(dispatch_get_main_queue(), ^{<br>[imageIndicator updateIndicatorProgress:progress];<br>});<br>}<br>if (progressBlock) {<br>progressBlock(receivedSize, expectedSize, targetURL);<br>}<br>};<br>//<strong>**</strong>3、下载图片<br>id <sdwebimageoperation> operation = [manager loadImageWithURL:url options:options context:context progress:combinedProgressBlock completed:^(UIImage <em>image, NSData </em>data, NSError <em>error, SDImageCacheType cacheType, BOOL finished, NSURL </em>imageURL) {<br><strong>strong </strong>typeof (wself) sself = wself;<br>if (!sself) { return; }<br>if (finished &amp;&amp; !error &amp;&amp; sself.sd_imageProgress.totalUnitCount == 0 &amp;&amp; sself.sd_imageProgress.completedUnitCount == 0) {<br>sself.sd_imageProgress.totalUnitCount = SDWebImageProgressUnitCountUnknown;<br>sself.sd_imageProgress.completedUnitCount = SDWebImageProgressUnitCountUnknown;<br>}<br>if (finished) {<br>[self sd_stopImageIndicator];<br>}</sdwebimageoperation></p>
+<p>BOOL shouldCallCompletedBlock = finished || (options &amp; SDWebImageAvoidAutoSetImage);<br>BOOL shouldNotSetImage = ((image &amp;&amp; (options &amp; SDWebImageAvoidAutoSetImage)) ||<br>(!image &amp;&amp; !(options &amp; SDWebImageDelayPlaceholder)));<br>SDWebImageNoParamsBlock callCompletedBlockClojure = ^{<br>if (!sself) { return; }<br>if (!shouldNotSetImage) {<br>[sself sd_setNeedsLayout];<br>}<br>//如果需要进行完成回调，回调completedBlock。<br>if (completedBlock &amp;&amp; shouldCallCompletedBlock) {<br>completedBlock(image, data, error, cacheType, finished, url);<br>}<br>};<br>if (shouldNotSetImage) {<br>dispatch_main_async_safe(callCompletedBlockClojure);<br>return;<br>}</p>
+<p>UIImage <em>targetImage = nil;<br>NSData </em>targetData = nil;<br>//4、下载完成之后进行图片设置<br>if (image) {<br>// case 2a: we got an image and the SDWebImageAvoidAutoSetImage is not set<br>targetImage = image;<br>targetData = data;<br>} else if (options &amp; SDWebImageDelayPlaceholder) {<br>// case 2b: we got no image and the SDWebImageDelayPlaceholder flag is set<br>targetImage = placeholder;<br>targetData = nil;<br>}</p>
+<p>// check whether we should use the image transition<br>SDWebImageTransition <em>transition = nil;<br>if (finished &amp;&amp; (options &amp; SDWebImageForceTransition || cacheType == SDImageCacheTypeNone)) {<br>transition = sself.sd_imageTransition;<br>}<br>//5、保证block能再主线程运行<br>dispatch_main_async_safe(^{<br>//6、设置图片<br>[sself sd_setImage:targetImage imageData:targetData basedOnClassOrViaCustomSetImageBlock:setImageBlock transition:transition cacheType:cacheType imageURL:imageURL];<br>callCompletedBlockClojure();<br>});<br>}];<br>[self sd_setImageLoadOperation:operation forKey:validOperationKey];<br>} else {<br>//7、如果url为空返回错误码<br>[self sd_stopImageIndicator];<br>dispatch_main_async_safe(^{<br>if (completedBlock) {<br>NSError </em>error = [NSError errorWithDomain:SDWebImageErrorDomain code:SDWebImageErrorInvalidURL userInfo:@{NSLocalizedDescriptionKey : @”Image url is nil”}];<br>completedBlock(nil, nil, error, SDImageCacheTypeNone, YES, url);<br>}<br>});<br>}<br>}</p>
+<p>总体过程如下：</p>
+<blockquote>
+<p>1、先取消当前类的图片加载过程，判断当前url</p>
+<p>2、如果有占位图加载占位图</p>
+<p>3、定义一个加载过程回调</p>
+<p>4、开始下载图片</p>
+<p>5、判断是否需要回调 有回调就进行回调</p>
+<p>6、设置图片，如果图片下载不成功则使用占位图，如果成功使用下载的图片</p>
+<p>7、如果url为空，返回错误码</p>
+</blockquote>
+<hr>
+<h4 id="SDMemoryCache"><a href="#SDMemoryCache" class="headerlink" title="SDMemoryCache"></a>SDMemoryCache</h4><p>内存缓存，使用<code>NSMapTable</code>进行缓存，<code>NSMapTable</code>对象类似与<code>NSDictionary</code>的数据结构，但是<code>NSMapTable</code>功能比<code>NSDictionary</code>对象要多的功能就是可以设置<code>key</code>和<code>value</code>的<code>NSPointerFunctionsOptions</code>特性。</p>
+<p><code>SDMemoryCache</code>继承自<code>NSCache</code>,类中实现了<code>SDMemoryCache</code>协议中的方法，具体方法如下：</p>
+<p>//初始化并设置config，config中有缓存的配置</p>
+<ul>
+<li>(nonnull instancetype)initWithConfig:(nonnull SDImageCacheConfig *)config;<br>//根据key获取缓存</li>
+<li>(nullable id)objectForKey:(nonnull id)key;<br>//根据key设置缓存</li>
+<li>(void)setObject:(nullable id)object forKey:(nonnull id)key;<br>//根据key设置缓存，设置改缓存cost</li>
+<li>(void)setObject:(nullable id)object forKey:(nonnull id)key cost:(NSUInteger)cost;<br>//根据key删除缓存</li>
+<li>(void)removeObjectForKey:(nonnull id)key;<br>//删除所有缓存</li>
+<li>(void)removeAllObjects;</li>
+</ul>
+<p>我们来看上面方法是如何实现的：</p>
+<ul>
+<li>(void)setObject:(id)obj forKey:(id)key cost:(NSUInteger)g {<br>[super setObject:obj forKey:key cost:g];<br>if (!self.config.shouldUseWeakMemoryCache) {<br>return;<br>}<br>if (key &amp;&amp; obj) {<br>// Store weak cache<br>//保证线程安全<br>LOCK(self.weakCacheLock);<br>//在NSMapTable中设置缓存<br>[self.weakCache setObject:obj forKey:key];<br>UNLOCK(self.weakCacheLock);<br>}<br>}</li>
+</ul>
+<p>//获取缓存<br>/<em>
+</em>1、首先判断配置中是否使用内存缓存<br><em>2、如果在父类中没有缓存，就在NSMapTable中寻找缓存，
+</em>3、找到之后就在父类中设置缓存。</p>
+<ul>
+<li>为啥要在NSCache中寻找缓存呢？找到为啥再写入父类中？ 这点有点没搞懂这个不就是存储两遍了嘛<br>*/</li>
+</ul>
+<ul>
+<li>(id)objectForKey:(id)key {<br>id obj = [super objectForKey:key];<br>if (!self.config.shouldUseWeakMemoryCache) {<br>return obj;<br>}<br>if (key &amp;&amp; !obj) {<br>// Check weak cache<br>LOCK(self.weakCacheLock);<br>obj = [self.weakCache objectForKey:key];<br>UNLOCK(self.weakCacheLock);<br>if (obj) {<br>// Sync cache<br>NSUInteger cost = 0;<br>if ([obj isKindOfClass:[UIImage class]]) {<br>cost = SDMemoryCacheCostForImage(obj);<br>}<br>[super setObject:obj forKey:key cost:cost];<br>}<br>}<br>return obj;<br>}</li>
+</ul>
+<p>//删除缓存</p>
+<ul>
+<li><p>(void)removeObjectForKey:(id)key {<br>[super removeObjectForKey:key];<br>if (!self.config.shouldUseWeakMemoryCache) {<br>return;<br>}<br>if (key) {<br>// Remove weak cache<br>LOCK(self.weakCacheLock);<br>[self.weakCache removeObjectForKey:key];<br>UNLOCK(self.weakCacheLock);<br>}<br>}</p>
+</li>
+<li><p>(void)removeAllObjects {<br>[super removeAllObjects];<br>if (!self.config.shouldUseWeakMemoryCache) {<br>return;<br>}<br>// Manually remove should also remove weak cache<br>LOCK(self.weakCacheLock);<br>[self.weakCache removeAllObjects];<br>UNLOCK(self.weakCacheLock);<br>}</p>
+</li>
+</ul>
+<p>这就是内存缓存的方式，有一点我不太能理解，为什么会使用<code>NSCache</code>和<code>NSMapTable</code>存储两遍缓存。等有时间咨询一下公司大佬。</p>
+<hr>
+<h3 id="SDDiskCache"><a href="#SDDiskCache" class="headerlink" title="SDDiskCache"></a>SDDiskCache</h3><p>磁盘存储，使用<code>NSFileManager</code>和<code>NSData</code>系统方法进行磁盘存储。</p>
+<p>首先看<code>SDDiskCache</code>协议中声明的方法：</p>
+<p>//初始化设置缓存地址，和设置缓存配置</p>
+<ul>
+<li>(nullable instancetype)initWithCachePath:(nonnull NSString <em>)cachePath config:(nonnull SDImageCacheConfig </em>)config;<br>//根据key判断是否存在缓存</li>
+<li>(BOOL)containsDataForKey:(nonnull NSString *)key;<br>//根据key获取缓存</li>
+<li>(nullable NSData <em>)dataForKey:(nonnull NSString </em>)key;<br>//根据key设置缓存</li>
+<li>(void)setData:(nullable NSData <em>)data forKey:(nonnull NSString </em>)key;<br>//根据key删除缓存</li>
+<li>(void)removeDataForKey:(nonnull NSString *)key;<br>//移除所有缓存</li>
+<li>(void)removeAllData;<br>//移除超出缓存，可以根据配置里面的ageLimit、countLimit、sizeLimit</li>
+<li>(void)removeExpiredData;<br>//根据key获取缓存路径</li>
+<li>(nullable NSString <em>)cachePathForKey:(nonnull NSString </em>)key;<br>//缓存总数量</li>
+<li>(NSUInteger)totalCount;<br>//缓存总大小</li>
+<li>(NSUInteger)totalSize;</li>
+</ul>
+<p>上面方法的实现过程：</p>
+<ul>
+<li>(BOOL)containsDataForKey:(NSString <em>)key {<br>NSParameterAssert(key);<br>NSString </em>filePath = [self cachePathForKey:key];<br>BOOL exists = [self.fileManager fileExistsAtPath:filePath];</li>
+</ul>
+<p>// fallback because of <a href="https://github.com/rs/SDWebImage/pull/976" target="_blank" rel="noopener">https://github.com/rs/SDWebImage/pull/976</a> that added the extension to the disk file name<br>// checking the key with and without the extension<br>if (!exists) {<br>exists = [self.fileManager fileExistsAtPath:filePath.stringByDeletingPathExtension];<br>}</p>
+<p>return exists;<br>}</p>
+<blockquote>
+<p>1、首先根据key获取缓存路径</p>
+<p>2、判断缓存是否存在</p>
+<p>3、判断存在不在，是因为有人表示添加扩展之后，找不到缓存问题</p>
+</blockquote>
+<p>//根据key获取缓存，基本上先获取缓存路径再找到缓存</p>
+<ul>
+<li>(NSData <em>)dataForKey:(NSString </em>)key {<br>NSParameterAssert(key);<br>NSString <em>filePath = [self cachePathForKey:key];<br>NSData </em>data = [NSData dataWithContentsOfFile:filePath options:self.config.diskCacheReadingOptions error:nil];<br>if (data) {<br>return data;<br>}</li>
+</ul>
+<p>// fallback because of <a href="https://github.com/rs/SDWebImage/pull/976" target="_blank" rel="noopener">https://github.com/rs/SDWebImage/pull/976</a> that added the extension to the disk file name<br>// checking the key with and without the extension<br>data = [NSData dataWithContentsOfFile:filePath.stringByDeletingPathExtension options:self.config.diskCacheReadingOptions error:nil];<br>if (data) {<br>return data;<br>}</p>
+<p>return nil;<br>}</p>
+<p>//设置缓存，就是把缓存写入缓存路径中。</p>
+<ul>
+<li>(void)setData:(NSData <em>)data forKey:(NSString </em>)key {<br>NSParameterAssert(data);<br>NSParameterAssert(key);<br>if (![self.fileManager fileExistsAtPath:self.diskCachePath]) {<br>[self.fileManager createDirectoryAtPath:self.diskCachePath withIntermediateDirectories:YES attributes:nil error:NULL];<br>}</li>
+</ul>
+<p>// get cache Path for image key<br>NSString <em>cachePathForKey = [self cachePathForKey:key];<br>// transform to NSUrl<br>NSURL </em>fileURL = [NSURL fileURLWithPath:cachePathForKey];</p>
+<p>[data writeToURL:fileURL options:self.config.diskCacheWritingOptions error:nil];</p>
+<p>// disable iCloud backup<br>if (self.config.shouldDisableiCloud) {<br>// ignore iCloud backup resource value error<br>[fileURL setResourceValue:@YES forKey:NSURLIsExcludedFromBackupKey error:nil];<br>}<br>}</p>
+<p>//删除缓存，就是利用系统NSFileManager类中文件管理方法进行删除</p>
+<ul>
+<li>(void)removeDataForKey:(NSString <em>)key {<br>NSParameterAssert(key);<br>NSString </em>filePath = [self cachePathForKey:key];<br>[self.fileManager removeItemAtPath:filePath error:nil];<br>}</li>
+</ul>
+<p><code>SDDiskCache</code>就介绍那么多，主要把缓存写到了磁盘中。</p>
+<h3 id="SDImageCache"><a href="#SDImageCache" class="headerlink" title="SDImageCache"></a>SDImageCache</h3><p><code>SDImageCache</code>是图片缓存的接口类，真正进行缓存的是<code>SDMemoryCache</code>和<code>SDDiskCache</code>。在<code>SDImageCache</code>提供的接口方法中，实现部分调用的都是上述两种类的方法，这里就不在阐述了。 </p>
+<p>我们重点看一下<code>SDImageCache</code>是如何<strong>自动管理缓存</strong>。</p>
+<blockquote>
+<p>我们可以看到SDImageCacheConfig缓存配置对象中有一个属性<code>shouldRemoveExpiredDataWhenEnterBackground</code>,默认是为YES,表示当程序进入后台时，清除多余缓存。还有就是程序即将推迟时，也会自动清除缓存。</p>
+</blockquote>
+<p>所以在初始化<code>SDImageCache</code>时，添加了2个监听。</p>
+<p>//当程序即将退出时，调起监听方法<br>[[NSNotificationCenter defaultCenter] addObserver:self<br>selector:@selector(applicationWillTerminate:)<br>name:UIApplicationWillTerminateNotification<br>object:nil];<br>//当程序已经进入后台时，调起监听方法<br>[[NSNotificationCenter defaultCenter] addObserver:self<br>selector:@selector(applicationDidEnterBackground:)<br>name:UIApplicationDidEnterBackgroundNotification<br>object:nil];</p>
+<p>监听的方法实现如下：</p>
+<p>//当程序即将退出时，删除老文件</p>
+<ul>
+<li>(void)applicationWillTerminate:(NSNotification *)notification {<br>[self deleteOldFilesWithCompletionBlock:nil];<br>}</li>
+</ul>
+<p>/<em>当程序进入后台时，
+</em>1、先判断是否进入后台删除多余缓存<br><em>2、如果需要再判断当前application是否存在
+</em>3、清除未完成任务<br><em>4、清除缓存
+</em>/</p>
+<ul>
+<li>(void)applicationDidEnterBackground:(NSNotification <em>)notification {<br>if (!self.config.shouldRemoveExpiredDataWhenEnterBackground) {<br>return;<br>}<br>Class UIApplicationClass = NSClassFromString(@”UIApplication”);<br>if(!UIApplicationClass || ![UIApplicationClass respondsToSelector:@selector(sharedApplication)]) {<br>return;<br>}<br>UIApplication </em>application = [UIApplication performSelector:@selector(sharedApplication)];<br>__block UIBackgroundTaskIdentifier bgTask = [application beginBackgroundTaskWithExpirationHandler:^{<br>// Clean up any unfinished task business by marking where you<br>// stopped or ending the task outright.<br>[application endBackgroundTask:bgTask];<br>bgTask = UIBackgroundTaskInvalid;<br>}];</li>
+</ul>
+<p>// Start the long-running task and return immediately.<br>[self deleteOldFilesWithCompletionBlock:^{<br>[application endBackgroundTask:bgTask];<br>bgTask = UIBackgroundTaskInvalid;<br>}];<br>}</p>
+<p>清除缓存方法实现：</p>
+<ul>
+<li>(void)deleteOldFilesWithCompletionBlock:(nullable SDWebImageNoParamsBlock)completionBlock {<br>dispatch_async(self.ioQueue, ^{<br>[self.diskCache removeExpiredData];<br>if (completionBlock) {<br>dispatch_async(dispatch_get_main_queue(), ^{<br>completionBlock();<br>});<br>}<br>});<br>}</li>
+</ul>
+<p>都会调用<code>SDDiskCache</code>中的<code>removeExpiredData</code>方法来进行清除缓存。</p>
+<p>//有些代码被省去用…代替</p>
+<ul>
+<li>(void)removeExpiredData {<br>//获取磁盘缓存地址<br>NSURL *diskCacheURL = [NSURL fileURLWithPath:self.diskCachePath isDirectory:YES];</li>
+</ul>
+<p>…</p>
+<p>NSArray<nsstring *=""> *resourceKeys = @[NSURLIsDirectoryKey, cacheContentDateKey, NSURLTotalFileAllocatedSizeKey];</nsstring></p>
+<p>//获取缓存文件<br>NSDirectoryEnumerator *fileEnumerator = [self.fileManager enumeratorAtURL:diskCacheURL<br>includingPropertiesForKeys:resourceKeys<br>options:NSDirectoryEnumerationSkipsHiddenFiles<br>errorHandler:NULL];</p>
+<p>//获取缓存失效时间<br>NSDate *expirationDate = (self.config.maxCacheAge &lt; 0) ? nil: [NSDate dateWithTimeIntervalSinceNow:-self.config.maxCacheAge];</p>
+<p>NSMutableDictionary&lt;NSURL <em>, NSDictionary&lt;NSString </em>, id&gt; <em>&gt; </em>cacheFiles = [NSMutableDictionary dictionary];<br>NSUInteger currentCacheSize = 0;</p>
+<p>/<em> 遍历所有缓存路径
+</em>1、移除所有比失效时间老的文件<br><em>2、存储基于大小的清理过程的文件属性。
+</em>/</p>
+<p>NSMutableArray<nsurl *=""> <em>urlsToDelete = [[NSMutableArray alloc] init];<br>for (NSURL </em>fileURL in fileEnumerator) {<br>NSError <em>error;<br>NSDictionary&lt;NSString </em>, id&gt; *resourceValues = [fileURL resourceValuesForKeys:resourceKeys error:&amp;error];</nsurl></p>
+<p>// 跳过文件夹和错误<br>if (error || !resourceValues || [resourceValues[NSURLIsDirectoryKey] boolValue]) {<br>continue;<br>}</p>
+<p>// Remove files that are older than the expiration date;<br>NSDate *modifiedDate = resourceValues[cacheContentDateKey];<br>if (expirationDate &amp;&amp; [[modifiedDate laterDate:expirationDate] isEqualToDate:expirationDate]) {<br>[urlsToDelete addObject:fileURL];<br>continue;<br>}</p>
+<p>// Store a reference to this file and account for its total size.<br>NSNumber *totalAllocatedSize = resourceValues[NSURLTotalFileAllocatedSizeKey];<br>currentCacheSize += totalAllocatedSize.unsignedIntegerValue;<br>cacheFiles[fileURL] = resourceValues;<br>}</p>
+<p>for (NSURL *fileURL in urlsToDelete) {<br>[self.fileManager removeItemAtURL:fileURL error:nil];<br>}</p>
+<p>//根据缓存总大小 清除缓存<br>NSUInteger maxCacheSize = self.config.maxCacheSize;<br>if (maxCacheSize &gt; 0 &amp;&amp; currentCacheSize &gt; maxCacheSize) {<br>// 如果当前缓存大小 大于最大缓存  就清除到最大缓存大小一半<br>const NSUInteger desiredCacheSize = maxCacheSize / 2;</p>
+<p>// 排序，根据最后修改时间 和最后获取时间<br>NSArray<nsurl *=""> *sortedFiles = [cacheFiles keysSortedByValueWithOptions:NSSortConcurrent<br>usingComparator:^NSComparisonResult(id obj1, id obj2) {<br>return [obj1[cacheContentDateKey] compare:obj2[cacheContentDateKey]];<br>}];</nsurl></p>
+<p>//删除文件到目标大小<br>for (NSURL <em>fileURL in sortedFiles) {<br>if ([self.fileManager removeItemAtURL:fileURL error:nil]) {<br>NSDictionary&lt;NSString </em>, id&gt; <em>resourceValues = cacheFiles[fileURL];<br>NSNumber </em>totalAllocatedSize = resourceValues[NSURLTotalFileAllocatedSizeKey];<br>currentCacheSize -= totalAllocatedSize.unsignedIntegerValue;</p>
+<p>if (currentCacheSize &lt; desiredCacheSize) {<br>break;<br>}<br>}<br>}<br>}<br>}</p>
+<p>步骤如下：</p>
+<blockquote>
+<p>1、获取缓存路径</p>
+<p>2、删除已经过了失效时间的缓存</p>
+<p>3、如果删除完失效时间的缓存的缓存磁盘大小还大于最大磁盘缓存大小</p>
+<p>4、根据最后修改和最后获取时间进行排序</p>
+<p>5、删除文件直到满足最大磁盘大小的一半</p>
+</blockquote>
+<hr>
+<p>接下来让我们看看图片是如何被下载的：</p>
+<h3 id="SDWebImageDownloader"><a href="#SDWebImageDownloader" class="headerlink" title="SDWebImageDownloader"></a>SDWebImageDownloader</h3><p><code>SDWebImageDownloader</code>进行图片下载。先介绍类中提到的几个类。</p>
+<h4 id="SDWebImageDownloadToken"><a href="#SDWebImageDownloadToken" class="headerlink" title="SDWebImageDownloadToken"></a>SDWebImageDownloadToken</h4><p>一个Token被关联到每一个图片下载， 遵守了<code>SDWebImageOperation</code>可以取消正在下载的图片。</p>
+<p>//这些属性在源代码中介绍的都很详细。<br>/*<em><br>Cancel the current download.
+</em>/</p>
+<ul>
+<li>(void)cancel;</li>
+</ul>
+<p>/*<em><br>The download’s URL.
+</em>/<br>@property (nonatomic, strong, nullable, readonly) NSURL *url;</p>
+<p>/*<em><br>The download’s request.
+</em>/<br>@property (nonatomic, strong, nullable, readonly) NSURLRequest *request;</p>
+<p>/*<em><br>The download’s response.
+</em>/<br>@property (nonatomic, strong, nullable, readonly) NSURLResponse *response;</p>
+<h4 id="SDWebImageDownloader-1"><a href="#SDWebImageDownloader-1" class="headerlink" title="SDWebImageDownloader"></a>SDWebImageDownloader</h4><p>/<em>下载的配置，里面包括很多信息
+</em>图片最大默认下载数量 默认是6<br><em>下载超时时间  默认15秒
+</em>下载进度<br><em>/NSURLSession配置
+</em>下载执行顺序 是先入先出 还是后入先出 默认先入先出<br>@property (nonatomic, copy, readonly, nonnull) SDWebImageDownloaderConfig *config;</p>
+<p>//设置请求修饰符以在图像加载之前修改原始下载请求,默认为nil<br>@property (nonatomic, strong, nullable) id<sdwebimagedownloaderrequestmodifier> requestModifier;</sdwebimagedownloaderrequestmodifier></p>
+<p>//获取当前的sessionCofig<br>@property (nonatomic, readonly, nonnull) NSURLSessionConfiguration *sessionConfiguration;</p>
+<p>//是否暂停当前线程<br>@property (nonatomic, assign, getter=isSuspended) BOOL suspended;</p>
+<p>//获取当前下载数量<br>@property (nonatomic, assign, readonly) NSUInteger currentDownloadCount;</p>
+<p>//获取当前downloader实例<br>@property (nonatomic, class, readonly, nonnull) SDWebImageDownloader *sharedDownloader;</p>
+<p>//初始化config</p>
+<ul>
+<li>(nonnull instancetype)initWithConfig:(nullable SDWebImageDownloaderConfig *)config </li>
+</ul>
+<p>//设置http请求的头文件</p>
+<ul>
+<li>(void)setValue:(nullable NSString <em>)value forHTTPHeaderField:(nullable NSString </em>)field;</li>
+</ul>
+<p>//获取请求的头文件</p>
+<ul>
+<li>(nullable NSString <em>)valueForHTTPHeaderField:(nullable NSString </em>)field;</li>
+</ul>
+<p>//下载图片方法</p>
+<ul>
+<li>(nullable SDWebImageDownloadToken <em>)downloadImageWithURL:(nullable NSURL </em>)url<br>options:(SDWebImageDownloaderOptions)options<br>progress:(nullable SDWebImageDownloaderProgressBlock)progressBlock<br>completed:(nullable SDWebImageDownloaderCompletedBlock)completedBlock;</li>
+</ul>
+<p>/<em>下载图片方法
+</em>url : 图片地址<br><em>options : 下载方式
+</em>context : 下载上下文<br><em>progressBlock : 进度回调
+</em>completedBlock : 下载完成回调<br>*/ </p>
+<ul>
+<li>(nullable SDWebImageDownloadToken <em>)downloadImageWithURL:(nullable NSURL </em>)url<br>options:(SDWebImageDownloaderOptions)options<br>context:(nullable SDWebImageContext *)context<br>progress:(nullable SDWebImageDownloaderProgressBlock)progressBlock<br>completed:(nullable SDWebImageDownloaderCompletedBlock)completedBlock;</li>
+</ul>
+<p>//取消所有下载                    </p>
+<ul>
+<li>(void)cancelAllDownloads;</li>
+</ul>
+<p>//是否取消待处理的操作。在shareDownloader中改方法失效，自定义Downloader的时候需要调用此方法，防止内存泄漏。 （目前没有用到过）</p>
+<ul>
+<li>(void)invalidateSessionAndCancel:(BOOL)cancelPendingOperations;</li>
+</ul>
+<p><code>SDWebImageDownloader</code>实现<code>SDImageLoader</code>协议。</p>
+<p>接下来，我们看看这个方法和属性是如何实现的。</p>
+<h4 id="SDWebImageDownloadToken实现"><a href="#SDWebImageDownloadToken实现" class="headerlink" title="SDWebImageDownloadToken实现"></a>SDWebImageDownloadToken实现</h4><p>//初始化downloadopration的时候添加收到下载完之后的通知，然后在接受通知方法中进行初始化response</p>
+<ul>
+<li><p>(instancetype)initWithDownloadOperation:(NSOperation<sdwebimagedownloaderoperation> *)downloadOperation {<br>self = [super init];<br>if (self) {<br>_downloadOperation = downloadOperation;<br>[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(downloadReceiveResponse:) name:SDWebImageDownloadReceiveResponseNotification object:downloadOperation];<br>}<br>return self;<br>}</sdwebimagedownloaderoperation></p>
+</li>
+<li><p>(void)downloadReceiveResponse:(NSNotification <em>)notification {<br>NSOperation<sdwebimagedownloaderoperation> </sdwebimagedownloaderoperation></em>downloadOperation = notification.object;<br>if (downloadOperation &amp;&amp; downloadOperation == self.downloadOperation) {<br>self.response = downloadOperation.response;<br>}<br>}</p>
+</li>
+<li><p>(void)cancel {<br>@synchronized (self) {<br>if (self.isCancelled) {<br>return;<br>}<br>self.cancelled = YES;<br>if (self.downloader) {<br>// Downloader is alive, cancel token<br>//如果downloader存在 就取消Token<br>[self.downloader cancel:self];<br>} else {<br>// Downloader is dealloced, only cancel download operation<br>//如果被dealloced 就取消下载operation<br>[self.downloadOperation cancel:self.downloadOperationCancelToken];<br>}<br>self.downloadOperationCancelToken = nil;<br>}<br>}</p>
+</li>
+</ul>
+<p>卧槽，这里也太几把复杂了，<code>SDWebImageDownloadToken</code>还持有<code>SDWebImageDownloader</code>实例，在哪里赋值的呢？我再仔细阅读以下。</p>
+<h4 id="SDWebImageDownloader实现"><a href="#SDWebImageDownloader实现" class="headerlink" title="SDWebImageDownloader实现"></a>SDWebImageDownloader实现</h4><p>//初始化operation和操作队列。http请求头文件等等.有一些宏定义判断系统的方法被我删除了</p>
+<ul>
+<li>(instancetype)initWithConfig:(SDWebImageDownloaderConfig <em>)config {<br>self = [super init];<br>if (self) {<br>if (!config) {<br>config = SDWebImageDownloaderConfig.defaultDownloaderConfig;<br>}<br>_config = [config copy];<br>[_config addObserver:self forKeyPath:NSStringFromSelector(@selector(maxConcurrentDownloads)) options:0 context:SDWebImageDownloaderContext];<br>_downloadQueue = [NSOperationQueue new];<br>_downloadQueue.maxConcurrentOperationCount = _config.maxConcurrentDownloads;<br>_downloadQueue.name = @”com.hackemist.SDWebImageDownloader”;<br>_URLOperations = [NSMutableDictionary new];<br>NSMutableDictionary&lt;NSString </em>, NSString <em>&gt; </em>headerDictionary = [NSMutableDictionary dictionary];<br>NSString <em>userAgent = nil;<br>// User-Agent Header; see <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.43" target="_blank" rel="noopener">http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.43</a><br>userAgent = [NSString stringWithFormat:@”%@/%@ (%@; iOS %@; Scale/%0.2f)”, [[NSBundle mainBundle] infoDictionary][(__bridge NSString </em>)kCFBundleExecutableKey] ?: [[NSBundle mainBundle] infoDictionary][(<strong>bridge NSString *)kCFBundleIdentifierKey], [[NSBundle mainBundle] infoDictionary][@”CFBundleShortVersionString”] ?: [[NSBundle mainBundle] infoDictionary][(</strong>bridge NSString <em>)kCFBundleVersionKey], [[UIDevice currentDevice] model], [[UIDevice currentDevice] systemVersion], [[UIScreen mainScreen] scale]];<br>if (userAgent) {<br>if (![userAgent canBeConvertedToEncoding:NSASCIIStringEncoding]) {<br>NSMutableString </em>mutableUserAgent = [userAgent mutableCopy];<br>if (CFStringTransform((<strong>bridge CFMutableStringRef)(mutableUserAgent), NULL, (</strong>bridge CFStringRef)@”Any-Latin; Latin-ASCII; [:^ASCII:] Remove”, false)) {<br>userAgent = mutableUserAgent;<br>}<br>}<br>headerDictionary[@”User-Agent”] = userAgent;<br>}<br>headerictionary[@”Accept”] = @”image/<em>;q=0.8”;<br>_HTTPHeaders = [headerDictionary copy];<br>_operationsLock = dispatch_semaphore_create(1);<br>NSURLSessionConfiguration </em>sessionConfiguration = _config.sessionConfiguration;<br>if (!sessionConfiguration) {<br>sessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];<br>}<br>//初始化NSURLSession,并设置代理<br>_session = [NSURLSession sessionWithConfiguration:sessionConfiguration<br>delegate:self<br>delegateQueue:nil];<br>}<br>return self;<br>}</li>
+</ul>
+<h5 id="下载图片"><a href="#下载图片" class="headerlink" title="下载图片"></a>下载图片</h5><ul>
+<li>(nullable SDWebImageDownloadToken <em>)downloadImageWithURL:(nullable NSURL </em>)url<br>options:(SDWebImageDownloaderOptions)options<br>context:(nullable SDWebImageContext <em>)context<br>progress:(nullable SDWebImageDownloaderProgressBlock)progressBlock<br>completed:(nullable SDWebImageDownloaderCompletedBlock)completedBlock {<br>//1、首先判断url是否存在 不存在就返回一个错误码<br>if (url == nil) {<br>if (completedBlock) {<br>NSError </em>error = [NSError errorWithDomain:SDWebImageErrorDomain code:SDWebImageErrorInvalidURL userInfo:@{NSLocalizedDescriptionKey : @”Image url is nil”}];<br>completedBlock(nil, nil, error, YES);<br>}<br>return nil;<br>}<br>//线程锁<br>LOCK(self.operationsLock);<br>//2、判断当前url是否已经在操作列表中<br>NSOperation<sdwebimagedownloaderoperation> <em>operation = [self.URLOperations objectForKey:url];<br>if (!operation || operation.isFinished) {<br>//如果operation或者 operation已经完成但没被self.URLOperations移除<br>//3、如果当前url操作不在操作列表中，配置operation<br>operation = [self createDownloaderOperationWithUrl:url options:options context:context];<br>//如果operation为空则返回错误码<br>if (!operation) {<br>UNLOCK(self.operationsLock);<br>if (completedBlock) {<br>NSError </em>error = [NSError errorWithDomain:SDWebImageErrorDomain code:SDWebImageErrorInvalidDownloadOperation userInfo:@{NSLocalizedDescriptionKey : @”Downloader operation is nil”}];<br>completedBlock(nil, nil, error, YES);<br>}<br>return nil;<br>}<br><strong>weak typeof(self) wself = self;<br>//操作完成之后的回调  从URLOperations中移除当前url<br>operation.completionBlock = ^{
+</strong>strong typeof(wself) sself = wself;<br>if (!sself) {<br>return;<br>}<br>LOCK(sself.operationsLock);<br>[sself.URLOperations removeObjectForKey:url];<br>UNLOCK(sself.operationsLock);<br>};<br>self.URLOperations[url] = operation;<br>// 在添加操作到操作队列之前必须所以配置都完成<br>//addOperation和<code>operation.completionBlock</code>不同步执行所以这不会导致死锁。<br>[self.downloadQueue addOperation:operation];<br>}<br>UNLOCK(self.operationsLock);</sdwebimagedownloaderoperation></li>
+</ul>
+<p>//根据operation生成downloadOperationCancelToken并生成SDWebImageDownloadToken实例对象<br>id downloadOperationCancelToken = [operation addHandlersForProgress:progressBlock completed:completedBlock];</p>
+<p>//在初始化方法中，实现监听，监听收到服务器response时<br>SDWebImageDownloadToken *token = [[SDWebImageDownloadToken alloc] initWithDownloadOperation:operation];<br>token.url = url;<br>token.request = operation.request;<br>token.downloadOperationCancelToken = downloadOperationCancelToken;<br>token.downloader = self;</p>
+<p>return token;<br>}</p>
+<p>上述过程如下：</p>
+<blockquote>
+<p>1、首先判断url是否存在 不存在就返回一个错误码</p>
+</blockquote>
+<blockquote>
+<p>2、判断当前url操作是否已经在操作列表中</p>
+</blockquote>
+<blockquote>
+<p>3、如果当前url操作不在操作列表中，配置operation</p>
+</blockquote>
+<blockquote>
+<p>4、操作完成之后的回调  从URLOperations中移除当前url</p>
+</blockquote>
+<blockquote>
+<p>5、根据operation生成downloadOperationCancelToken并生成SDWebImageDownloadToken实例对象</p>
+</blockquote>
+<p>如何根据URL、options、context 生成一个operation对象：</p>
+<ul>
+<li>(nullable NSOperation<sdwebimagedownloaderoperation> <em>)createDownloaderOperationWithUrl:(nonnull NSURL </em>)url<br>options:(SDWebImageDownloaderOptions)options<br>context:(nullable SDWebImageContext <em>)context {<br>//超时响应时间，如果未设置默认15秒<br>NSTimeInterval timeoutInterval = self.config.downloadTimeout;<br>if (timeoutInterval == 0.0) {<br>timeoutInterval = 15.0;<br>}<br>//防止缓存两次，如果不是使用<code>NSURLCache</code>缓存策略,则忽略本地缓存直接向服务器请求<br>NSURLRequestCachePolicy cachePolicy = options &amp; SDWebImageDownloaderUseNSURLCache ? NSURLRequestUseProtocolCachePolicy : NSURLRequestReloadIgnoringLocalCacheData;<br>//初始化一个请求。设置缓存策略和超时响应时间<br>NSMutableURLRequest </em>mutableRequest = [[NSMutableURLRequest alloc] initWithURL:url cachePolicy:cachePolicy timeoutInterval:timeoutInterval];<br>//设置请求cookies，HTTPShouldUsePipelining（设置为YES,表示不必等到response响应 就可以再次请求，头文件。 ）<br>mutableRequest.HTTPShouldHandleCookies = (options &amp; SDWebImageDownloaderHandleCookies);<br>mutableRequest.HTTPShouldUsePipelining = YES;<br>mutableRequest.allHTTPHeaderFields = self.HTTPHeaders;<br>//请求标识符<br>id<sdwebimagedownloaderrequestmodifier> requestModifier;<br>if ([context valueForKey:SDWebImageContextDownloadRequestModifier]) {<br>requestModifier = [context valueForKey:SDWebImageContextDownloadRequestModifier];<br>} else {<br>requestModifier = self.requestModifier;<br>}</sdwebimagedownloaderrequestmodifier></sdwebimagedownloaderoperation></li>
+</ul>
+<p>NSURLRequest <em>request;<br>if (requestModifier) {<br>NSURLRequest </em>modifiedRequest = [requestModifier modifiedRequestWithRequest:[mutableRequest copy]];<br>// If modified request is nil, early return<br>if (!modifiedRequest) {<br>return nil;<br>} else {<br>request = [modifiedRequest copy];<br>}<br>} else {<br>request = [mutableRequest copy];<br>}<br>Class operationClass = self.config.operationClass;<br>if (operationClass &amp;&amp; [operationClass isSubclassOfClass:[NSOperation class]] &amp;&amp; [operationClass conformsToProtocol:@protocol(SDWebImageDownloaderOperation)]) {<br>// Custom operation class<br>} else {<br>operationClass = [SDWebImageDownloaderOperation class];<br>}<br>//根据请求request、session和options、context初始化操作<br>NSOperation<sdwebimagedownloaderoperation> *operation = [[operationClass alloc] initWithRequest:request inSession:self.session options:options context:context];</sdwebimagedownloaderoperation></p>
+<p>if ([operation respondsToSelector:@selector(setCredential:)]) {<br>//判断是否需要身份认证<br>if (self.config.urlCredential) {<br>operation.credential = self.config.urlCredential;<br>} else if (self.config.username &amp;&amp; self.config.password) {<br>operation.credential = [NSURLCredential credentialWithUser:self.config.username password:self.config.password persistence:NSURLCredentialPersistenceForSession];<br>}<br>}<br>//判断是否实现方法：设置最小过程时间<br>if ([operation respondsToSelector:@selector(setMinimumProgressInterval:)]) {<br>NSTimeInterval minimumProgressInterval = self.config.minimumProgressInterval;<br>minimumProgressInterval = MIN(MAX(minimumProgressInterval, 0), 1);<br>operation.minimumProgressInterval = minimumProgressInterval;<br>}<br>//设置操作优先级<br>if (options &amp; SDWebImageDownloaderHighPriority) {<br>operation.queuePriority = NSOperationQueuePriorityHigh;<br>} else if (options &amp; SDWebImageDownloaderLowPriority) {<br>operation.queuePriority = NSOperationQueuePriorityLow;<br>}<br>//设置操作是否是先进后出， 如果是给操作添加依赖<br>if (self.config.executionOrder == SDWebImageDownloaderLIFOExecutionOrder) {<br>// Emulate LIFO execution order by systematically adding new operations as last operation’s dependency<br>[self.lastAddedOperation addDependency:operation];<br>self.lastAddedOperation = operation;<br>}</p>
+<p>return operation;<br>}</p>
+<p>这就是生成一个operation的过程。</p>
+<p>接下来我们来看一下<code>NSURLSessionDataDelegate</code>实现过程:</p>
+<p>//收到服务器响应时调用的方法，在operation中解析回调，解析过程就不介绍</p>
+<ul>
+<li>(void)URLSession:(NSURLSession <em>)session<br>dataTask:(NSURLSessionDataTask </em>)dataTask<br>didReceiveResponse:(NSURLResponse *)response<br>completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler {</li>
+</ul>
+<p>// Identify the operation that runs this task and pass it the delegate method<br>NSOperation<sdwebimagedownloaderoperation> *dataOperation = [self operationWithTask:dataTask];<br>if ([dataOperation respondsToSelector:@selector(URLSession:dataTask:didReceiveResponse:completionHandler:)]) {<br>[dataOperation URLSession:session dataTask:dataTask didReceiveResponse:response completionHandler:completionHandler];<br>} else {<br>if (completionHandler) {<br>completionHandler(NSURLSessionResponseAllow);<br>}<br>}<br>}</sdwebimagedownloaderoperation></p>
+<p>/<em>收到服务器返回的数据时调用的方法
+</em>首先判断当前dataTask是否存在<br><em>存在的放调用dataOperation中的方法今天数据处理。
+</em>/</p>
+<ul>
+<li>(void)URLSession:(NSURLSession <em>)session dataTask:(NSURLSessionDataTask </em>)dataTask didReceiveData:(NSData *)data {</li>
+</ul>
+<p>// Identify the operation that runs this task and pass it the delegate method<br>NSOperation<sdwebimagedownloaderoperation> *dataOperation = [self operationWithTask:dataTask];<br>if ([dataOperation respondsToSelector:@selector(URLSession:dataTask:didReceiveData:)]) {<br>[dataOperation URLSession:session dataTask:dataTask didReceiveData:data];<br>}<br>}</sdwebimagedownloaderoperation></p>
+<p>//接下来我们看看在SDWebImageDownloaderOperation是怎么处理冲服务器接受到的数据的：</p>
+<ul>
+<li>(void)URLSession:(NSURLSession <em>)session dataTask:(NSURLSessionDataTask </em>)dataTask didReceiveData:(NSData *)data {<br>//如果图片数据没有就初始化图片数据<br>if (!self.imageData) {<br>self.imageData = [[NSMutableData alloc] initWithCapacity:self.expectedSize];<br>}<br>//从服务器获取的数据添加到图片数据中，因为可能分多次返回数据。<br>[self.imageData appendData:data];</li>
+</ul>
+<p>self.receivedSize = self.imageData.length;<br>if (self.expectedSize == 0) {<br>// Unknown expectedSize, immediately call progressBlock and return<br>for (SDWebImageDownloaderProgressBlock progressBlock in [self callbacksForKey:kProgressCallbackKey]) {<br>progressBlock(self.receivedSize, self.expectedSize, self.request.URL);<br>}<br>return;<br>}</p>
+<p>// Get the finish status<br>BOOL finished = (self.receivedSize &gt;= self.expectedSize);<br>// Get the current progress<br>double currentProgress = (double)self.receivedSize / (double)self.expectedSize;<br>double previousProgress = self.previousProgress;<br>double progressInterval = currentProgress - previousProgress;<br>// Check if we need callback progress<br>if (!finished &amp;&amp; (progressInterval &lt; self.minimumProgressInterval)) {<br>return;<br>}<br>self.previousProgress = currentProgress;</p>
+<p>if (self.options &amp; SDWebImageDownloaderProgressiveLoad) {<br>// Get the image data<br>NSData *imageData = [self.imageData copy];</p>
+<p>// progressive decode the image in coder queue<br>dispatch_async(self.coderQueue, ^{<br>UIImage *image = SDImageLoaderDecodeProgressiveImageData(imageData, self.request.URL, finished, self, [[self class] imageOptionsFromDownloaderOptions:self.options], self.context);<br>if (image) {<br>// We do not keep the progressive decoding image even when <code>finished</code>=YES. Because they are for view rendering but not take full function from downloader options. And some coders implementation may not keep consistent between progressive decoding and normal decoding.</p>
+<p>//回调完成block<br>[self callCompletionBlocksWithImage:image imageData:nil error:nil finished:NO];<br>}<br>});<br>}</p>
+<p>for (SDWebImageDownloaderProgressBlock progressBlock in [self callbacksForKey:kProgressCallbackKey]) {<br>progressBlock(self.receivedSize, self.expectedSize, self.request.URL);<br>}<br>}</p>
+<p>这就是完整的下载过程。</p>
+<h4 id="SDWebImageManager"><a href="#SDWebImageManager" class="headerlink" title="SDWebImageManager"></a>SDWebImageManager</h4><p>接下来，让我们看看<code>SDWebImageManager</code>如何使用缓存或者直接下载图片的。</p>
+<h5 id="SDWebImageCombinedOperation"><a href="#SDWebImageCombinedOperation" class="headerlink" title="SDWebImageCombinedOperation"></a>SDWebImageCombinedOperation</h5><p><code>SDWebImageCombinedOperation</code>对象实现了<code>SDWebImageOperation</code>协议，并包含了下载<code>Operation</code>和加载缓存<code>Operation</code>。</p>
+<h5 id="SDWebImageManagerDelegate"><a href="#SDWebImageManagerDelegate" class="headerlink" title="SDWebImageManagerDelegate"></a>SDWebImageManagerDelegate</h5><p>//当缓存中没有找到图片时，返回YES需要下载图片 </p>
+<ul>
+<li>(BOOL)imageManager:(nonnull SDWebImageManager <em>)imageManager shouldDownloadImageForURL:(nonnull NSURL </em>)imageURL;</li>
+</ul>
+<p>//控制发生下载错误时标记为失败URL的复杂逻辑。如果委托实现此方法，我们将不会使用内置方法根据错误代码将URL标记为失败;</p>
+<ul>
+<li>(BOOL)imageManager:(nonnull SDWebImageManager <em>)imageManager shouldBlockFailedURL:(nonnull NSURL </em>)imageURL withError:(nonnull NSError *)error;</li>
+</ul>
+<h5 id="SDWebImageManager-1"><a href="#SDWebImageManager-1" class="headerlink" title="SDWebImageManager"></a>SDWebImageManager</h5><p>//图片缓存类<br>@property (strong, nonatomic, readonly, nonnull) id<sdimagecache> imageCache;</sdimagecache></p>
+<p>//图片下载类<br>@property (strong, nonatomic, readonly, nonnull) id<sdimageloader> imageLoader;</sdimageloader></p>
+<p>//图片转换器， 用于加载完成后进行图片转换，将转换完的图片存入缓存 默认为nil<br>@property (strong, nonatomic, nullable) id<sdimagetransformer> transformer;</sdimagetransformer></p>
+<p>//缓存过滤器用于将URL转换为缓存密钥。<br>@property (nonatomic, strong, nullable) id<sdwebimagecachekeyfilter> cacheKeyFilter;</sdwebimagecachekeyfilter></p>
+<p>//默认缓存器<br>@property (nonatomic, class, nullable) id<sdimagecache> defaultImageCache;</sdimagecache></p>
+<p>//默认下载器<br>@property (nonatomic, class, nullable) id<sdimageloader> defaultImageLoader;</sdimageloader></p>
+<p>//初始化下载器、缓存类</p>
+<ul>
+<li>(nonnull instancetype)initWithCache:(nonnull id<sdimagecache>)cache loader:(nonnull id<sdimageloader>)loader</sdimageloader></sdimagecache></li>
+</ul>
+<p>//加载图片过程</p>
+<ul>
+<li>(nullable SDWebImageCombinedOperation <em>)loadImageWithURL:(nullable NSURL </em>)url<br>options:(SDWebImageOptions)options<br>progress:(nullable SDImageLoaderProgressBlock)progressBlock<br>completed:(nonnull SDInternalCompletionBlock)completedBlock;</li>
+</ul>
+<p>//加载图片                             </p>
+<ul>
+<li>(nullable SDWebImageCombinedOperation <em>)loadImageWithURL:(nullable NSURL </em>)url<br>options:(SDWebImageOptions)options<br>context:(nullable SDWebImageContext *)context<br>progress:(nullable SDImageLoaderProgressBlock)progressBlock<br>completed:(nonnull SDInternalCompletionBlock)completedBlock;</li>
+</ul>
+<p>//取消当前所以操作                                  </p>
+<ul>
+<li>(void)cancelAll;</li>
+</ul>
+<p>//根据url返回缓存key</p>
+<ul>
+<li>(nullable NSString <em>)cacheKeyForURL:(nullable NSURL </em>)url;</li>
+</ul>
+<p><code>SDWebImageManager</code>接口文件中，提供了图片加载的方法，初始化下载器和缓存器的方法，也提供了很多属性供开发者使用。接下来我们直入主题，看看是如何实现这些方法的。</p>
+<ul>
+<li>(SDWebImageCombinedOperation <em>)loadImageWithURL:(nullable NSURL </em>)url<br>options:(SDWebImageOptions)options<br>context:(nullable SDWebImageContext *)context<br>progress:(nullable SDImageLoaderProgressBlock)progressBlock<br>completed:(nonnull SDInternalCompletionBlock)completedBlock {</li>
+</ul>
+<p>//有些代码和注释我都进行删除了，但是不影响绝对流程<br>…</p>
+<p>//前面都是防止开发者传参错误<br>if ([url isKindOfClass:NSString.class]) {<br>url = [NSURL URLWithString:(NSString <em>)url];<br>}<br>if (![url isKindOfClass:NSURL.class]) {<br>url = nil;<br>}<br>//初始化一个SDWebImageCombinedOperation对象，该对象实现了SDWebImageOperation协议<br>SDWebImageCombinedOperation </em>operation = [SDWebImageCombinedOperation new];<br>operation.manager = self;<br>//判断当前url是否在下载失败的urls中<br>BOOL isFailedUrl = NO;<br>if (url) {<br>//线程锁<br>LOCK(self.failedURLsLock);<br>isFailedUrl = [self.failedURLs containsObject:url];<br>UNLOCK(self.failedURLsLock);<br>}<br>//如果url为空，或者当前url在下载失败列表中 返回错误信息<br>if (url.absoluteString.length == 0 || (!(options &amp; SDWebImageRetryFailed) &amp;&amp; isFailedUrl)) {<br>[self callCompletionBlockForOperation:operation completion:completedBlock error:[NSError errorWithDomain:SDWebImageErrorDomain code:SDWebImageErrorInvalidURL userInfo:@{NSLocalizedDescriptionKey : @”Image url is nil”}] url:url];<br>return operation;<br>}</p>
+<p>//如果上面条件都不成立 就把当前SDWebImageCombinedOperation对象加载到runningOperations中<br>LOCK(self.runningOperationsLock);<br>[self.runningOperations addObject:operation];<br>UNLOCK(self.runningOperationsLock);</p>
+<p>// 配置content<br>context = [self processedContextWithContext:context];</p>
+<p>//加载图片过程，下面我们来看看过程<br>[self callCacheProcessForOperation:operation url:url options:options context:context progress:progressBlock completed:completedBlock];</p>
+<p>return operation;<br>}</p>
+<ul>
+<li>(void)callCacheProcessForOperation:(nonnull SDWebImageCombinedOperation <em>)operation<br>url:(nullable NSURL </em>)url<br>options:(SDWebImageOptions)options<br>context:(nullable SDWebImageContext <em>)context<br>progress:(nullable SDImageLoaderProgressBlock)progressBlock<br>completed:(nullable SDInternalCompletionBlock)completedBlock {<br>//真的代码太长了。。。。<br>//判断当前是否只从服务器下载，不查询缓存<br>BOOL shouldQueryCache = (options &amp; SDWebImageFromLoaderOnly) == 0;<br>if (shouldQueryCache) {<br>id<sdwebimagecachekeyfilter> cacheKeyFilter = context[SDWebImageContextCacheKeyFilter];<br>//查询当前urlKey<br>NSString </sdwebimagecachekeyfilter></em>key = [self cacheKeyForURL:url cacheKeyFilter:cacheKeyFilter];<br><strong>weak SDWebImageCombinedOperation <em>weakOperation = operation;<br>//查询缓存是否存在<br>operation.cacheOperation = [self.imageCache queryImageForKey:key options:options context:context completion:^(UIImage </em> _Nullable cachedImage, NSData * _Nullable cachedData, SDImageCacheType cacheType) {
+</strong>strong __typeof(weakOperation) strongOperation = weakOperation;<br>//如果不存在或则被取消则移除当前strongOperation<br>if (!strongOperation || strongOperation.isCancelled) {<br>[self safelyRemoveOperationFromRunning:strongOperation];<br>return;<br>}<br>// 继续下载过程<br>[self callDownloadProcessForOperation:strongOperation url:url options:options context:context cachedImage:cachedImage cachedData:cachedData cacheType:cacheType progress:progressBlock completed:completedBlock];<br>}];<br>} else {<br>// 继续下载过程<br>[self callDownloadProcessForOperation:operation url:url options:options context:context cachedImage:nil cachedData:nil cacheType:SDImageCacheTypeNone progress:progressBlock completed:completedBlock];<br>}<br>}</li>
+</ul>
+<ul>
+<li>(void)callDownloadProcessForOperation:(nonnull SDWebImageCombinedOperation <em>)operation<br>url:(nullable NSURL </em>)url<br>options:(SDWebImageOptions)options<br>context:(SDWebImageContext <em>)context<br>cachedImage:(nullable UIImage </em>)cachedImage<br>cachedData:(nullable NSData <em>)cachedData<br>cacheType:(SDImageCacheType)cacheType<br>progress:(nullable SDImageLoaderProgressBlock)progressBlock<br>completed:(nullable SDInternalCompletionBlock)completedBlock {<br>//判断是否需要下载<br>BOOL shouldDownload = (options &amp; SDWebImageFromCacheOnly) == 0;<br>//判断当前缓存图片是否存在 是否需要刷新缓存<br>shouldDownload &amp;= (!cachedImage || options &amp; SDWebImageRefreshCached);<br>//根据代理判断<br>shouldDownload &amp;= (![self.delegate respondsToSelector:@selector(imageManager:shouldDownloadImageForURL:)] || [self.delegate imageManager:self shouldDownloadImageForURL:url]);<br>//判断url是否存在<br>shouldDownload &amp;= [self.imageLoader canLoadWithURL:url];<br>if (shouldDownload) {<br>if (cachedImage &amp;&amp; options &amp; SDWebImageRefreshCached) {<br>//如果缓存存在而且需要刷新缓存，先返回缓存照片，然后在再进行下载，这是我的理解，感觉有点问题<br>[self callCompletionBlockForOperation:operation completion:completedBlock image:cachedImage data:cachedData error:nil cacheType:cacheType finished:YES url:url];<br>SDWebImageMutableContext </em>mutableContext;<br>if (context) {<br>mutableContext = [context mutableCopy];<br>} else {<br>mutableContext = [NSMutableDictionary dictionary];<br>}<br>mutableContext[SDWebImageContextLoaderCachedImage] = cachedImage;<br>context = [mutableContext copy];<br>}</li>
+</ul>
+<p>//下载图片<br><strong>weak typeof(operation) weakOperation = operation;<br>operation.loaderOperation = [self.imageLoader loadImageWithURL:url options:options context:context progress:progressBlock completed:^(UIImage <em>downloadedImage, NSData </em>downloadedData, NSError *error, BOOL finished) {
+</strong>strong typeof(weakOperation) strongOperation = weakOperation;<br>//如果operation被取消了 则什么都不做<br>if (!strongOperation || strongOperation.isCancelled) {</p>
+<p>} else if (cachedImage &amp;&amp; options &amp; SDWebImageRefreshCached &amp;&amp; [error.domain isEqualToString:SDWebImageErrorDomain] &amp;&amp; error.code == SDWebImageErrorCacheNotModified) {<br>//刷新图片过程遇到了NSURLCache的缓存 也不做什么<br>} else if (error) {<br>//下载出现错误，返回错误<br>[self callCompletionBlockForOperation:strongOperation completion:completedBlock error:error url:url];<br>BOOL shouldBlockFailedURL;<br>// 判断是否需要返回错误url<br>if ([self.delegate respondsToSelector:@selector(imageManager:shouldBlockFailedURL:withError:)]) {<br>shouldBlockFailedURL = [self.delegate imageManager:self shouldBlockFailedURL:url withError:error];<br>} else {<br>shouldBlockFailedURL = (   error.code != NSURLErrorNotConnectedToInternet<br>&amp;&amp; error.code != NSURLErrorCancelled<br>&amp;&amp; error.code != NSURLErrorTimedOut<br>&amp;&amp; error.code != NSURLErrorInternationalRoamingOff<br>&amp;&amp; error.code != NSURLErrorDataNotAllowed<br>&amp;&amp; error.code != NSURLErrorCannotFindHost<br>&amp;&amp; error.code != NSURLErrorCannotConnectToHost<br>&amp;&amp; error.code != NSURLErrorNetworkConnectionLost);<br>}<br>// 把错误url添加到failedURLsLock数组中<br>if (shouldBlockFailedURL) {<br>LOCK(self.failedURLsLock);<br>[self.failedURLs addObject:url];<br>UNLOCK(self.failedURLsLock);<br>}<br>} else {<br>//下载成功，把url从failedURLsLock移除<br>if ((options &amp; SDWebImageRetryFailed)) {<br>LOCK(self.failedURLsLock);<br>[self.failedURLs removeObject:url];<br>UNLOCK(self.failedURLsLock);<br>}</p>
+<p>SDImageCacheType storeCacheType = SDImageCacheTypeAll;<br>if (context[SDWebImageContextStoreCacheType]) {<br>storeCacheType = [context[SDWebImageContextStoreCacheType] integerValue];<br>}<br>id<sdwebimagecachekeyfilter> cacheKeyFilter = context[SDWebImageContextCacheKeyFilter];<br>NSString <em>key = [self cacheKeyForURL:url cacheKeyFilter:cacheKeyFilter];<br>id<sdimagetransformer> transformer = context[SDWebImageContextImageTransformer];<br>id<sdwebimagecacheserializer> cacheSerializer = context[SDWebImageContextCacheSerializer];<br>//判断是否需要转换图片<br>if (downloadedImage &amp;&amp; (!downloadedImage.sd_isAnimated || (options &amp; SDWebImageTransformAnimatedImage)) &amp;&amp; transformer) {<br>dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{<br>//转换图片 根据不同key  这个源码还没看 后面会看<br>UIImage </sdwebimagecacheserializer></sdimagetransformer></em>transformedImage = [transformer transformedImageWithImage:downloadedImage forKey:key];<br>if (transformedImage &amp;&amp; finished) {<br>NSString <em>transformerKey = [transformer transformerKey];<br>NSString </em>cacheKey = SDTransformedKeyForKey(key, transformerKey);<br>BOOL imageWasTransformed = ![transformedImage isEqual:downloadedImage];<br>NSData <em>cacheData;<br>//缓存数据<br>if (cacheSerializer) {<br>cacheData = [cacheSerializer cacheDataWithImage:transformedImage  originalData:(imageWasTransformed ? nil : downloadedData) imageURL:url];<br>} else {<br>cacheData = (imageWasTransformed ? nil : downloadedData);<br>}<br>//图片进行缓存<br>[self.imageCache storeImage:transformedImage imageData:cacheData forKey:cacheKey cacheType:storeCacheType completion:nil];<br>}<br>//调用completedBlock<br>[self callCompletionBlockForOperation:strongOperation completion:completedBlock image:transformedImage data:downloadedData error:nil cacheType:SDImageCacheTypeNone finished:finished url:url];<br>});<br>} else {<br>if (downloadedImage &amp;&amp; finished) {<br>if (cacheSerializer) {<br>dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{<br>NSData </em>cacheData = [cacheSerializer cacheDataWithImage:downloadedImage originalData:downloadedData imageURL:url];<br>[self.imageCache storeImage:downloadedImage imageData:cacheData forKey:key cacheType:storeCacheType completion:nil];<br>});<br>} else {<br>[self.imageCache storeImage:downloadedImage imageData:downloadedData forKey:key cacheType:storeCacheType completion:nil];<br>}<br>}<br>[self callCompletionBlockForOperation:strongOperation completion:completedBlock image:downloadedImage data:downloadedData error:nil cacheType:SDImageCacheTypeNone finished:finished url:url];<br>}<br>}<br>//下载完成 移除Operation<br>if (finished) {<br>[self safelyRemoveOperationFromRunning:strongOperation];<br>}<br>}];<br>//如果不下载只取缓存<br>} else if (cachedImage) {<br>[self callCompletionBlockForOperation:operation completion:completedBlock image:cachedImage data:cachedData error:nil cacheType:cacheType finished:YES url:url];<br>[self safelyRemoveOperationFromRunning:operation];<br>} else {<br>// 返回nil<br>[self callCompletionBlockForOperation:operation completion:completedBlock image:nil data:nil error:nil cacheType:SDImageCacheTypeNone finished:YES url:url];<br>[self safelyRemoveOperationFromRunning:operation];<br>}<br>}</sdwebimagecachekeyfilter></p>
+<p>过程大致如下：</p>
+<blockquote>
+<p>判断图片是否需要下载</p>
+<p>如果需要下载，就下载，然后存入缓存</p>
+<p>如果不需要下载，也存在缓存，就使用缓存</p>
+<p>如果不下载，也没有缓存，就返回nil</p>
+</blockquote>
+<p>这个过程就和<code>UIView+WebCache</code>中的加载图片过程相对应了。过程太过于复杂，需要慢慢细读。</p>
+<p>知识点：</p>
+<h6 id="线程锁"><a href="#线程锁" class="headerlink" title="线程锁"></a>线程锁</h6><p>使用信号量进行线程锁，保证线程安全</p>
+<p>#ifndef LOCK</p>
+<p>#define LOCK(lock) dispatch_semaphore_wait(lock, DISPATCH_TIME_FOREVER);</p>
+<p>#endif</p>
+<p>#ifndef UNLOCK</p>
+<p>#define UNLOCK(lock) dispatch_semaphore_signal(lock);</p>
+<p>#endif</p>
+<p>lock = dispatch_semaphore_create(1);</p>
+<p>//block锁 </p>
+<p>#ifndef LOCKBLOCK</p>
+<p>#define LOCKBLOCK(…) dispatch_semaphore_wait(self-&gt;_lock, DISPATCH_TIME_FOREVER); \<br><strong>VA_ARGS</strong>; \<br>dispatch_semaphore_signal(self-&gt;_lock);</p>
+<h6 id="区分平台"><a href="#区分平台" class="headerlink" title="区分平台"></a>区分平台</h6><p>定义不同平台：</p>
+<p>#if TARGET_OS_IOS</p>
+<p>#define SD_IOS 1</p>
+<p>#else</p>
+<p>#define SD_IOS 0</p>
+<p>#endif</p>
+<p>根据不同平台引入不同文件。</p>
+<h6 id="保证主线程安全"><a href="#保证主线程安全" class="headerlink" title="保证主线程安全"></a>保证主线程安全</h6><p><code>dispatch_queue_async_safe</code>方法，传入<code>queue</code>的值为主队列<code>dispatch_get_main_queue()</code>和block，<code>dispatch_queue_async_safe</code>方法判断当前队列是否为主队列，返回YES则直接执行block的代码，否则将block添加到主队列中异步执行。</p>
+<p>#ifndef dispatch_main_async_safe</p>
+<p>#define dispatch_main_async_safe(block)\<br>if (dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL) == dispatch_queue_get_label(dispatch_get_main_queue())) {\<br>block();\<br>} else {\<br>dispatch_async(dispatch_get_main_queue(), block);\<br>}</p>
+<p>#endif</p>
+<h6 id="传值"><a href="#传值" class="headerlink" title="传值"></a>传值</h6><p>全部使用block 和content 进行传值。</p>
+
       
     </div>
 
@@ -464,8 +893,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            Table of Contents
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            Overview
+          </li>
+        </ul>
+      
 
-      <div class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <div class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -522,6 +960,22 @@
         </div>
       </div>
 
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#SDWebImage源码阅读"><span class="nav-number">1.</span> <span class="nav-text">SDWebImage源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#架构调用流程图"><span class="nav-number">1.0.1.</span> <span class="nav-text">架构调用流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDWebImage简单使用"><span class="nav-number">1.0.2.</span> <span class="nav-text">SDWebImage简单使用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#SDMemoryCache"><span class="nav-number">1.0.2.1.</span> <span class="nav-text">SDMemoryCache</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDDiskCache"><span class="nav-number">1.0.3.</span> <span class="nav-text">SDDiskCache</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDImageCache"><span class="nav-number">1.0.4.</span> <span class="nav-text">SDImageCache</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDWebImageDownloader"><span class="nav-number">1.0.5.</span> <span class="nav-text">SDWebImageDownloader</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageDownloadToken"><span class="nav-number">1.0.5.1.</span> <span class="nav-text">SDWebImageDownloadToken</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageDownloader-1"><span class="nav-number">1.0.5.2.</span> <span class="nav-text">SDWebImageDownloader</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageDownloadToken实现"><span class="nav-number">1.0.5.3.</span> <span class="nav-text">SDWebImageDownloadToken实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageDownloader实现"><span class="nav-number">1.0.5.4.</span> <span class="nav-text">SDWebImageDownloader实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#下载图片"><span class="nav-number">1.0.5.4.1.</span> <span class="nav-text">下载图片</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageManager"><span class="nav-number">1.0.5.5.</span> <span class="nav-text">SDWebImageManager</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#SDWebImageCombinedOperation"><span class="nav-number">1.0.5.5.1.</span> <span class="nav-text">SDWebImageCombinedOperation</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SDWebImageManagerDelegate"><span class="nav-number">1.0.5.5.2.</span> <span class="nav-text">SDWebImageManagerDelegate</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SDWebImageManager-1"><span class="nav-number">1.0.5.5.3.</span> <span class="nav-text">SDWebImageManager</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#线程锁"><span class="nav-number">1.0.5.5.3.1.</span> <span class="nav-text">线程锁</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#区分平台"><span class="nav-number">1.0.5.5.3.2.</span> <span class="nav-text">区分平台</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#保证主线程安全"><span class="nav-number">1.0.5.5.3.3.</span> <span class="nav-text">保证主线程安全</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#传值"><span class="nav-number">1.0.5.5.3.4.</span> <span class="nav-text">传值</span></a></li></ol></li></ol></li></ol></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
       
 
       
