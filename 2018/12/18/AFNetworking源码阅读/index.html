@@ -114,7 +114,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
 <meta property="og:image" content="http://robertleeng.com/img/NSURLSessionTask.png">
-<meta property="og:updated_time" content="2018-12-25T16:08:41.398Z">
+<meta property="og:updated_time" content="2018-12-25T16:54:43.321Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
@@ -363,7 +363,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-26 00:08:41" itemprop="dateModified" datetime="2018-12-26T00:08:41+08:00">2018-12-26</time>
+                <time title="Modified: 2018-12-26 00:54:43" itemprop="dateModified" datetime="2018-12-26T00:54:43+08:00">2018-12-26</time>
               
             
           </span>
@@ -545,7 +545,36 @@ NSLog(@&quot;response:%@&quot;,response);
 <p>从图中可以看出来，<code>NSURLSessionDataTask</code>和<code>NSURLSessionDownloadTask</code>继承自<code>NSURLSessionTask</code>，而<code>NSURLSessionUploadTask</code>继承自<code>NSURLSessionDataTask</code>。</p>
 <p><code>NSURLSessionDataTask</code>：用于处理一般的NSData类型的数据，不支持后台下载。<br><code>NSURLSessionDownloadTask</code> ： 用于下载文件，支持后台下载<br><code>NSURLSessionUploadTask</code> ： 用于PUT方法上传文件，支持后台上传。</p>
 <p>接下来让我们一个类一个类进行分析，来看看<code>NSURLSession</code>实现上传和下载。</p>
-<h4 id="NSURLSessionConfiguration-类"><a href="#NSURLSessionConfiguration-类" class="headerlink" title="NSURLSessionConfiguration 类"></a>NSURLSessionConfiguration 类</h4>
+<h4 id="NSURLSessionConfiguration-类"><a href="#NSURLSessionConfiguration-类" class="headerlink" title="NSURLSessionConfiguration 类"></a>NSURLSessionConfiguration 类</h4><p><code>NSURLSessionConfiguration</code>提供了三种方法获取获取配置实例</p>
+<pre><code>//获取默认配置，在创建默认会话时使用。
+@property (class, readonly, strong) NSURLSessionConfiguration *defaultSessionConfiguration;
+
+//获取短暂配置， 在创建短暂会话时使用，使用短暂配置就是不存储数据在磁盘上，全部数据都通过缓存保存，当会话结束时，释放
+@property (class, readonly, strong) NSURLSessionConfiguration *ephemeralSessionConfiguration;
+
+//创建后台会话配置，会话可以在后台下载上传数据 iOS8以后才可以使用
++ (NSURLSessionConfiguration *)backgroundSessionConfigurationWithIdentifier:(NSString *)identifier;
+</code></pre><p>在<code>NSURLSessionConfiguration</code>中还定义了很多配置。包括:</p>
+<pre><code>//请求缓存策略
+@property NSURLRequestCachePolicy requestCachePolicy;
+
+//请求超时时间
+@property NSTimeInterval timeoutIntervalForRequest;
+
+//资源超时时间
+@property NSTimeInterval timeoutIntervalForResource;
+
+//网络服务类型
+@property NSURLRequestNetworkServiceType networkServiceType
+
+//是否使用蜂窝数据
+@property BOOL allowsCellularAccess;
+
+//任务等待连接成功再执行 iOS11才可以使用
+@property BOOL waitsForConnectivity;
+
+//这里就介绍这么多，后面还有设置Cookies、安全策略、网络缓存等等。我都没用过（仅仅表示我都，所以我很菜/(ㄒoㄒ)/~~），哈哈哈哈哈。所以我慢慢看，后面再补充吧。
+</code></pre>
       
     </div>
 
