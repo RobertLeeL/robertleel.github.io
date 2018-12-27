@@ -113,7 +113,7 @@
 <meta property="og:description" content="SDWebImage源码阅读SDWebImage实现了一个异步下载图片并且支持缓存的库。 阅读的SDWebImage版本为5.0.0-beta3。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="https://user-gold-cdn.xitu.io/2017/12/25/1608bf72cff0b2e1?imageslim">
-<meta property="og:updated_time" content="2018-12-25T13:05:27.254Z">
+<meta property="og:updated_time" content="2018-12-27T15:24:36.122Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="SDWebImage源码阅读">
 <meta name="twitter:description" content="SDWebImage源码阅读SDWebImage实现了一个异步下载图片并且支持缓存的库。 阅读的SDWebImage版本为5.0.0-beta3。">
@@ -362,7 +362,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-25 21:05:27" itemprop="dateModified" datetime="2018-12-25T21:05:27+08:00">2018-12-25</time>
+                <time title="Modified: 2018-12-27 23:24:36" itemprop="dateModified" datetime="2018-12-27T23:24:36+08:00">2018-12-27</time>
               
             
           </span>
@@ -400,7 +400,7 @@
 <h3 id="架构调用流程图"><a href="#架构调用流程图" class="headerlink" title="架构调用流程图"></a>架构调用流程图</h3><blockquote>
 <p>流程图来自<a href="https://juejin.im/post/5a4080d16fb9a0451969d0aa" target="_blank" rel="noopener">J_Knight_</a>这篇文章。非常感谢~</p>
 </blockquote>
-<p><img src="https://user-gold-cdn.xitu.io/2017/12/25/1608bf72cff0b2e1?imageslim" alt="流程图"> </p>
+<p><img src="https://user-gold-cdn.xitu.io/2017/12/25/1608bf72cff0b2e1?imageslim" alt="流程图"></p>
 <p><code>SDWebImageDownloader</code>类负责图片的下载；<code>SDWebImageCache</code>类负责图片的缓存，可以进行缓存的添加删除，查询；<code>SDWebImageManager</code>是这个框架的核心类，主要负责<code>SDWebImageDownloader</code>和<code>SDWebImageCache</code>。</p>
 <h3 id="SDWebImage简单使用"><a href="#SDWebImage简单使用" class="headerlink" title="SDWebImage简单使用"></a>SDWebImage简单使用</h3><p>&nbsp;&nbsp;&nbsp;&nbsp;在使用<code>SDWebImage</code>都是从<code>UIImageView+WebCache</code>这个分类进行设置<code>UIImageView</code>的图片。使用大致如下：</p>
 <p>//首先定义一个UIImageView然后为imageView设置图片。<br>UIImageView *image = [[UIImageView alloc] initWithFrame:CGRectMake(100, 100, 100, 100)];<br>image.contentMode = UIViewContentModeScaleAspectFill;<br>[image sd_setImageWithURL:[NSURL URLWithString:@”<a href="https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png&quot;]]" target="_blank" rel="noopener">https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/bd_logo1_31bdc765.png&quot;]]</a>;<br>[self.view addSubview:image];</p>
@@ -413,8 +413,7 @@
 <li>progressBlock : 下载过程的回调<br>*/</li>
 </ul>
 <ul>
-<li>(void)sd_setImageWithURL:(nullable NSURL *)url;</li>
-<li></li>
+<li>(void)sd_setImageWithURL:(nullable NSURL *)url;<br>-</li>
 <li><p>(void)sd_setImageWithURL:(nullable NSURL <em>)url<br>placeholderImage:(nullable UIImage </em>)placeholder;</p>
 </li>
 <li><p>(void)sd_setImageWithURL:(nullable NSURL <em>)url<br>placeholderImage:(nullable UIImage </em>)placeholder<br>options:(SDWebImageOptions)options;</p>
@@ -537,7 +536,7 @@
 <li>(void)removeDataForKey:(NSString <em>)key {<br>NSParameterAssert(key);<br>NSString </em>filePath = [self cachePathForKey:key];<br>[self.fileManager removeItemAtPath:filePath error:nil];<br>}</li>
 </ul>
 <p><code>SDDiskCache</code>就介绍那么多，主要把缓存写到了磁盘中。</p>
-<h3 id="SDImageCache"><a href="#SDImageCache" class="headerlink" title="SDImageCache"></a>SDImageCache</h3><p><code>SDImageCache</code>是图片缓存的接口类，真正进行缓存的是<code>SDMemoryCache</code>和<code>SDDiskCache</code>。在<code>SDImageCache</code>提供的接口方法中，实现部分调用的都是上述两种类的方法，这里就不在阐述了。 </p>
+<h3 id="SDImageCache"><a href="#SDImageCache" class="headerlink" title="SDImageCache"></a>SDImageCache</h3><p><code>SDImageCache</code>是图片缓存的接口类，真正进行缓存的是<code>SDMemoryCache</code>和<code>SDDiskCache</code>。在<code>SDImageCache</code>提供的接口方法中，实现部分调用的都是上述两种类的方法，这里就不在阐述了。</p>
 <p>我们重点看一下<code>SDImageCache</code>是如何<strong>自动管理缓存</strong>。</p>
 <blockquote>
 <p>我们可以看到SDImageCacheConfig缓存配置对象中有一个属性<code>shouldRemoveExpiredDataWhenEnterBackground</code>,默认是为YES,表示当程序进入后台时，清除多余缓存。还有就是程序即将推迟时，也会自动清除缓存。</p>
@@ -617,7 +616,7 @@
 <p>//获取当前downloader实例<br>@property (nonatomic, class, readonly, nonnull) SDWebImageDownloader *sharedDownloader;</p>
 <p>//初始化config</p>
 <ul>
-<li>(nonnull instancetype)initWithConfig:(nullable SDWebImageDownloaderConfig *)config </li>
+<li>(nonnull instancetype)initWithConfig:(nullable SDWebImageDownloaderConfig *)config</li>
 </ul>
 <p>//设置http请求的头文件</p>
 <ul>
@@ -634,7 +633,7 @@
 <p>/<em>下载图片方法
 </em>url : 图片地址<br><em>options : 下载方式
 </em>context : 下载上下文<br><em>progressBlock : 进度回调
-</em>completedBlock : 下载完成回调<br>*/ </p>
+</em>completedBlock : 下载完成回调<br>*/</p>
 <ul>
 <li>(nullable SDWebImageDownloadToken <em>)downloadImageWithURL:(nullable NSURL </em>)url<br>options:(SDWebImageDownloaderOptions)options<br>context:(nullable SDWebImageContext *)context<br>progress:(nullable SDWebImageDownloaderProgressBlock)progressBlock<br>completed:(nullable SDWebImageDownloaderCompletedBlock)completedBlock;</li>
 </ul>
@@ -719,7 +718,7 @@
 <p>这就是完整的下载过程。</p>
 <h4 id="SDWebImageManager"><a href="#SDWebImageManager" class="headerlink" title="SDWebImageManager"></a>SDWebImageManager</h4><p>接下来，让我们看看<code>SDWebImageManager</code>如何使用缓存或者直接下载图片的。</p>
 <h5 id="SDWebImageCombinedOperation"><a href="#SDWebImageCombinedOperation" class="headerlink" title="SDWebImageCombinedOperation"></a>SDWebImageCombinedOperation</h5><p><code>SDWebImageCombinedOperation</code>对象实现了<code>SDWebImageOperation</code>协议，并包含了下载<code>Operation</code>和加载缓存<code>Operation</code>。</p>
-<h5 id="SDWebImageManagerDelegate"><a href="#SDWebImageManagerDelegate" class="headerlink" title="SDWebImageManagerDelegate"></a>SDWebImageManagerDelegate</h5><p>//当缓存中没有找到图片时，返回YES需要下载图片 </p>
+<h5 id="SDWebImageManagerDelegate"><a href="#SDWebImageManagerDelegate" class="headerlink" title="SDWebImageManagerDelegate"></a>SDWebImageManagerDelegate</h5><p>//当缓存中没有找到图片时，返回YES需要下载图片</p>
 <ul>
 <li>(BOOL)imageManager:(nonnull SDWebImageManager <em>)imageManager shouldDownloadImageForURL:(nonnull NSURL </em>)imageURL;</li>
 </ul>
@@ -791,7 +790,7 @@
 <p>#define UNLOCK(lock) dispatch_semaphore_signal(lock);</p>
 <p>#endif</p>
 <p>lock = dispatch_semaphore_create(1);</p>
-<p>//block锁 </p>
+<p>//block锁</p>
 <p>#ifndef LOCKBLOCK</p>
 <p>#define LOCKBLOCK(…) dispatch_semaphore_wait(self-&gt;_lock, DISPATCH_TIME_FOREVER); \<br><strong>VA_ARGS</strong>; \<br>dispatch_semaphore_signal(self-&gt;_lock);</p>
 <h6 id="区分平台"><a href="#区分平台" class="headerlink" title="区分平台"></a>区分平台</h6><p>定义不同平台：</p>
@@ -806,6 +805,9 @@
 <p>#define dispatch_main_async_safe(block)\<br>if (dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL) == dispatch_queue_get_label(dispatch_get_main_queue())) {\<br>block();\<br>} else {\<br>dispatch_async(dispatch_get_main_queue(), block);\<br>}</p>
 <p>#endif</p>
 <h6 id="传值"><a href="#传值" class="headerlink" title="传值"></a>传值</h6><p>全部使用block 和content 进行传值。</p>
+<h6 id="NSMutableArray-valueForKey-方法"><a href="#NSMutableArray-valueForKey-方法" class="headerlink" title="NSMutableArray valueForKey 方法"></a>NSMutableArray valueForKey 方法</h6><p>在SDWebImageDownloaderOperation中获取回调block的时候使用到这个方法</p>
+<p>   NSMutableArray<id> *callbacks = [[self.callbackBlocks valueForKey:key] mutableCopy];</id></p>
+<p>这一下懵了，还是第一次 NSArray 调用valueForKey方法，经过查询之后，原来如果数组中是字典的情况下，调用数字的valueForKey,就是遍历数组并在数组中的对象调用valueForKey方法，并返回一个数组。这个就真的很厉害了。 </p>
 
       
     </div>
@@ -970,7 +972,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#SDWebImage源码阅读"><span class="nav-number">1.</span> <span class="nav-text">SDWebImage源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#架构调用流程图"><span class="nav-number">1.0.1.</span> <span class="nav-text">架构调用流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDWebImage简单使用"><span class="nav-number">1.0.2.</span> <span class="nav-text">SDWebImage简单使用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#SDMemoryCache"><span class="nav-number">1.0.2.1.</span> <span class="nav-text">SDMemoryCache</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDDiskCache"><span class="nav-number">1.0.3.</span> <span class="nav-text">SDDiskCache</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDImageCache"><span class="nav-number">1.0.4.</span> <span class="nav-text">SDImageCache</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDWebImageDownloader"><span class="nav-number">1.0.5.</span> <span class="nav-text">SDWebImageDownloader</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageDownloadToken"><span class="nav-number">1.0.5.1.</span> <span class="nav-text">SDWebImageDownloadToken</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageDownloader-1"><span class="nav-number">1.0.5.2.</span> <span class="nav-text">SDWebImageDownloader</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageDownloadToken实现"><span class="nav-number">1.0.5.3.</span> <span class="nav-text">SDWebImageDownloadToken实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageDownloader实现"><span class="nav-number">1.0.5.4.</span> <span class="nav-text">SDWebImageDownloader实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#下载图片"><span class="nav-number">1.0.5.4.1.</span> <span class="nav-text">下载图片</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageManager"><span class="nav-number">1.0.5.5.</span> <span class="nav-text">SDWebImageManager</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#SDWebImageCombinedOperation"><span class="nav-number">1.0.5.5.1.</span> <span class="nav-text">SDWebImageCombinedOperation</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SDWebImageManagerDelegate"><span class="nav-number">1.0.5.5.2.</span> <span class="nav-text">SDWebImageManagerDelegate</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SDWebImageManager-1"><span class="nav-number">1.0.5.5.3.</span> <span class="nav-text">SDWebImageManager</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#线程锁"><span class="nav-number">1.0.5.5.3.1.</span> <span class="nav-text">线程锁</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#区分平台"><span class="nav-number">1.0.5.5.3.2.</span> <span class="nav-text">区分平台</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#保证主线程安全"><span class="nav-number">1.0.5.5.3.3.</span> <span class="nav-text">保证主线程安全</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#传值"><span class="nav-number">1.0.5.5.3.4.</span> <span class="nav-text">传值</span></a></li></ol></li></ol></li></ol></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#SDWebImage源码阅读"><span class="nav-number">1.</span> <span class="nav-text">SDWebImage源码阅读</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#架构调用流程图"><span class="nav-number">1.0.1.</span> <span class="nav-text">架构调用流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDWebImage简单使用"><span class="nav-number">1.0.2.</span> <span class="nav-text">SDWebImage简单使用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#SDMemoryCache"><span class="nav-number">1.0.2.1.</span> <span class="nav-text">SDMemoryCache</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDDiskCache"><span class="nav-number">1.0.3.</span> <span class="nav-text">SDDiskCache</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDImageCache"><span class="nav-number">1.0.4.</span> <span class="nav-text">SDImageCache</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SDWebImageDownloader"><span class="nav-number">1.0.5.</span> <span class="nav-text">SDWebImageDownloader</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageDownloadToken"><span class="nav-number">1.0.5.1.</span> <span class="nav-text">SDWebImageDownloadToken</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageDownloader-1"><span class="nav-number">1.0.5.2.</span> <span class="nav-text">SDWebImageDownloader</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageDownloadToken实现"><span class="nav-number">1.0.5.3.</span> <span class="nav-text">SDWebImageDownloadToken实现</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageDownloader实现"><span class="nav-number">1.0.5.4.</span> <span class="nav-text">SDWebImageDownloader实现</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#下载图片"><span class="nav-number">1.0.5.4.1.</span> <span class="nav-text">下载图片</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#SDWebImageManager"><span class="nav-number">1.0.5.5.</span> <span class="nav-text">SDWebImageManager</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#SDWebImageCombinedOperation"><span class="nav-number">1.0.5.5.1.</span> <span class="nav-text">SDWebImageCombinedOperation</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SDWebImageManagerDelegate"><span class="nav-number">1.0.5.5.2.</span> <span class="nav-text">SDWebImageManagerDelegate</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#SDWebImageManager-1"><span class="nav-number">1.0.5.5.3.</span> <span class="nav-text">SDWebImageManager</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#线程锁"><span class="nav-number">1.0.5.5.3.1.</span> <span class="nav-text">线程锁</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#区分平台"><span class="nav-number">1.0.5.5.3.2.</span> <span class="nav-text">区分平台</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#保证主线程安全"><span class="nav-number">1.0.5.5.3.3.</span> <span class="nav-text">保证主线程安全</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#传值"><span class="nav-number">1.0.5.5.3.4.</span> <span class="nav-text">传值</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#NSMutableArray-valueForKey-方法"><span class="nav-number">1.0.5.5.3.5.</span> <span class="nav-text">NSMutableArray valueForKey 方法</span></a></li></ol></li></ol></li></ol></li></ol></li></ol></li></ol></div>
             
 
           </div>

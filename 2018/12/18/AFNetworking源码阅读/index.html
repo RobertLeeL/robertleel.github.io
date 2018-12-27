@@ -114,7 +114,8 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
 <meta property="og:image" content="http://robertleeng.com/img/NSURLSessionTask.png">
-<meta property="og:updated_time" content="2018-12-25T17:05:36.632Z">
+<meta property="og:image" content="http://robertleeng.com/img/AFNetWorking.png">
+<meta property="og:updated_time" content="2018-12-27T15:17:52.529Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
@@ -363,7 +364,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-26 01:05:36" itemprop="dateModified" datetime="2018-12-26T01:05:36+08:00">2018-12-26</time>
+                <time title="Modified: 2018-12-27 23:17:52" itemprop="dateModified" datetime="2018-12-27T23:17:52+08:00">2018-12-27</time>
               
             
           </span>
@@ -574,7 +575,106 @@ NSLog(@&quot;response:%@&quot;,response);
 @property BOOL waitsForConnectivity;
 
 //这里就介绍这么多，后面还有设置Cookies、安全策略、网络缓存等等。我都没用过（仅仅表示我都，所以我很菜/(ㄒoㄒ)/~~），哈哈哈哈哈。所以我慢慢看，后面再补充吧。
-</code></pre><h4 id="NSURLSession-类"><a href="#NSURLSession-类" class="headerlink" title="NSURLSession 类"></a>NSURLSession 类</h4>
+</code></pre><h4 id="NSURLSession-类"><a href="#NSURLSession-类" class="headerlink" title="NSURLSession 类"></a>NSURLSession 类</h4><p><code>NSURLSession</code>有三种创建方式</p>
+<pre><code>//静态创建会话 会话使用全局的cache、cookies和证书
+@property (class, readonly, strong) NSURLSession *sharedSession;
+
+//创建对应配置的会话
++ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration;
+
+//可以定制的会话，还可以指定delegate 并设置delegate的队列
++ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration delegate:(nullable id &lt;NSURLSessionDelegate&gt;)delegate delegateQueue:(nullable NSOperationQueue *)queue;
+</code></pre><p>在<code>NSURLSession</code>可以获得task执行会话</p>
+<pre><code>//请求走代理
+/* Creates a data task with the given request.  The request may have a body stream. */
+- (NSURLSessionDataTask *)dataTaskWithRequest:(NSURLRequest *)request;
+
+/* Creates a data task to retrieve the contents of the given URL. */
+- (NSURLSessionDataTask *)dataTaskWithURL:(NSURL *)url
+
+//请求不走代理
+- (NSURLSessionDataTask *)dataTaskWithRequest:(NSURLRequest *)request completionHandler:(void (^)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
+- (NSURLSessionDataTask *)dataTaskWithURL:(NSURL *)url completionHandler:(void (^)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
+
+//上传
+/* Creates an upload task with the given request.  The body of the request will be created from the file referenced by fileURL */
+- (NSURLSessionUploadTask *)uploadTaskWithRequest:(NSURLRequest *)request fromFile:(NSURL *)fileURL;
+
+/* Creates an upload task with the given request.  The body of the request is provided from the bodyData. */
+- (NSURLSessionUploadTask *)uploadTaskWithRequest:(NSURLRequest *)request fromData:(NSData *)bodyData;
+
+
+/*
+ * upload convenience method.
+ */
+- (NSURLSessionUploadTask *)uploadTaskWithRequest:(NSURLRequest *)request fromFile:(NSURL *)fileURL completionHandler:(void (^)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
+- (NSURLSessionUploadTask *)uploadTaskWithRequest:(NSURLRequest *)request fromData:(nullable NSData *)bodyData completionHandler:(void (^)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
+
+
+//通过一个request创建下载任务
+- (NSURLSessionDownloadTask *)downloadTaskWithRequest:(NSURLRequest *)request completionHandler:(void (^)(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
+
+//通过一个URL创建下载任务
+- (NSURLSessionDownloadTask *)downloadTaskWithURL:(NSURL *)url completionHandler:(void (^)(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
+
+//实现断点续传
+- (NSURLSessionDownloadTask *)downloadTaskWithResumeData:(NSData *)resumeData completionHandler:(void (^)(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
+</code></pre><p>还有NSURLSession的代理方法进行回调。这些等看完AFNetwroking之后专门写一篇文章解读一下。</p>
+<hr>
+<h4 id="AFNetworking"><a href="#AFNetworking" class="headerlink" title="AFNetworking"></a>AFNetworking</h4><p><img src="/img/AFNetWorking.png" alt="截图"></p>
+<p>从图中可以看出，AFNetWorking大致分为五个部分。</p>
+<ul>
+<li>NSURLSession : 下载器</li>
+<li>Reachability : 网络监听</li>
+<li>Security : 安全相关</li>
+<li>Serialization : 序列化</li>
+<li>UIKit : 一些分类</li>
+</ul>
+<p>接下来我们一步步分析<code>AFNetworking</code>是如何实现的。</p>
+<h4 id="AFNetworking-简单使用"><a href="#AFNetworking-简单使用" class="headerlink" title="AFNetworking 简单使用"></a>AFNetworking 简单使用</h4><pre><code>AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
+//最大请求并发任务数
+manager.operationQueue.maxConcurrentOperationCount = 5;
+
+// 请求格式
+// AFHTTPRequestSerializer            二进制格式
+// AFJSONRequestSerializer            JSON
+// AFPropertyListRequestSerializer    PList(是一种特殊的XML,解析起来相对容易)              
+manager.requestSerializer = [AFHTTPRequestSerializer serializer]; // 上传普通格式
+
+// 超时时间
+manager.requestSerializer.timeoutInterval = 30.0f;
+// 设置请求头
+[manager.requestSerializer setValue:@&quot;gzip&quot; forHTTPHeaderField:@&quot;Content-Encoding&quot;];
+// 设置接收的Content-Type
+manager.responseSerializer.acceptableContentTypes = [[NSSet alloc] initWithObjects:@&quot;application/xml&quot;, @&quot;text/xml&quot;,@&quot;text/html&quot;, @&quot;application/json&quot;,@&quot;text/plain&quot;,nil];
+
+// 返回格式
+// AFHTTPResponseSerializer           二进制格式
+// AFJSONResponseSerializer           JSON
+// AFXMLParserResponseSerializer      XML,只能返回XMLParser,还需要自己通过代理方法解析
+// AFXMLDocumentResponseSerializer (Mac OS X)
+// AFPropertyListResponseSerializer   PList
+// AFImageResponseSerializer          Image
+// AFCompoundResponseSerializer       组合
+
+manager.responseSerializer = [AFJSONResponseSerializer serializer];//返回格式 JSON
+//设置返回C的ontent-type
+manager.responseSerializer.acceptableContentTypes=[[NSSet alloc] initWithObjects:@&quot;application/xml&quot;, @&quot;text/xml&quot;,@&quot;text/html&quot;, @&quot;application/json&quot;,@&quot;text/plain&quot;,nil];
+//创建请求地址
+NSString *url=@&quot;https://www.tking.cn/showapi/mobile/pub/site/1002/active_show?isSupportSession=1&amp;length=10&amp;locationCityOID=1101&amp;offset=0&amp;seq=desc&amp;siteCityOID=1101&amp;sorting=weight&amp;src=ios&amp;type=6&amp;ver=4.1.0&quot;;
+//调用get请求方法
+[manager GET:url parameters:nil progress:^(NSProgress * _Nonnull downloadProgress) {
+      //返回请求返回进度
+      NSLog(@&quot;downloadProgress--&gt;%@&quot;,downloadProgress);
+} success:^(NSURLSessionDataTask * _Nonnull task, id  _Nullable responseObject) {
+      //请求成功返回数据 根据responseSerializer 返回不同的数据格式
+      NSLog(@&quot;responseObject--&gt;%@&quot;,responseObject);
+} failure:^(NSURLSessionDataTask * _Nullable task, NSError * _Nonnull error) {
+      //请求失败
+      NSLog(@&quot;error--&gt;%@&quot;,error);
+    }];
+</code></pre><p>上面就是一次简单的Get请求方法。</p>
+<h5 id="AFURLSessionManager"><a href="#AFURLSessionManager" class="headerlink" title="AFURLSessionManager"></a>AFURLSessionManager</h5>
       
     </div>
 
@@ -744,7 +844,7 @@ NSLog(@&quot;response:%@&quot;,response);
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AFNetworking-3-2-1"><span class="nav-number">1.</span> <span class="nav-text">AFNetworking 3.2.1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSURLConnection"><span class="nav-number">2.</span> <span class="nav-text">NSURLConnection</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDelegate"><span class="nav-number">2.1.</span> <span class="nav-text">NSURLConnectionDelegate</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDataDelegate"><span class="nav-number">2.2.</span> <span class="nav-text">NSURLConnectionDataDelegate</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSURLSession"><span class="nav-number">3.</span> <span class="nav-text">NSURLSession</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLSessionConfiguration-类"><span class="nav-number">3.1.</span> <span class="nav-text">NSURLSessionConfiguration 类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLSession-类"><span class="nav-number">3.2.</span> <span class="nav-text">NSURLSession 类</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AFNetworking-3-2-1"><span class="nav-number">1.</span> <span class="nav-text">AFNetworking 3.2.1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSURLConnection"><span class="nav-number">2.</span> <span class="nav-text">NSURLConnection</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDelegate"><span class="nav-number">2.1.</span> <span class="nav-text">NSURLConnectionDelegate</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDataDelegate"><span class="nav-number">2.2.</span> <span class="nav-text">NSURLConnectionDataDelegate</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSURLSession"><span class="nav-number">3.</span> <span class="nav-text">NSURLSession</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLSessionConfiguration-类"><span class="nav-number">3.1.</span> <span class="nav-text">NSURLSessionConfiguration 类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLSession-类"><span class="nav-number">3.2.</span> <span class="nav-text">NSURLSession 类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking"><span class="nav-number">3.3.</span> <span class="nav-text">AFNetworking</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking-简单使用"><span class="nav-number">3.4.</span> <span class="nav-text">AFNetworking 简单使用</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#AFURLSessionManager"><span class="nav-number">3.4.1.</span> <span class="nav-text">AFURLSessionManager</span></a></li></ol></li></ol></li></ol></div>
             
 
           </div>
