@@ -112,7 +112,7 @@
 <meta property="og:site_name" content="Robert Lee">
 <meta property="og:description" content="GCD简介GCD是Grand Central Dispatch的缩写，是基于C语言。是苹果公司为多核的的并行运算提出的解决方案。GCD负责创建线程和调度需要执行的任务，线程是由系统管理的。 开发中经常使用到GCD里的知识例如：  创建单例的时候：  static dispatch_once_t onceToken;    dispatch_once(&amp;amp;onceToken, ^{">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-12-28T16:32:21.002Z">
+<meta property="og:updated_time" content="2018-12-28T17:04:08.524Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="iOS多线程开发之GCD">
 <meta name="twitter:description" content="GCD简介GCD是Grand Central Dispatch的缩写，是基于C语言。是苹果公司为多核的的并行运算提出的解决方案。GCD负责创建线程和调度需要执行的任务，线程是由系统管理的。 开发中经常使用到GCD里的知识例如：  创建单例的时候：  static dispatch_once_t onceToken;    dispatch_once(&amp;amp;onceToken, ^{">
@@ -360,7 +360,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-29 00:32:21" itemprop="dateModified" datetime="2018-12-29T00:32:21+08:00">2018-12-29</time>
+                <time title="Modified: 2018-12-29 01:04:08" itemprop="dateModified" datetime="2018-12-29T01:04:08+08:00">2018-12-29</time>
               
             
           </span>
@@ -462,7 +462,59 @@ dispatch_queue_t globalQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY
 <p>GCD自带了一个串行队列，就是主队列，只要提交到主队列中的任务，都会在主线程中执行。通过<code>dispatch_get_main_queue()</code>函数获得主队列</p>
 <pre><code>//获取主队列
 dispatch_queue_t mainQueue = dispatch_get_main_queue();
-</code></pre>
+</code></pre><h4 id="提交任务"><a href="#提交任务" class="headerlink" title="提交任务"></a>提交任务</h4><p>上面已经介绍了队列的创建，接下来让我们看看如何提交任务。</p>
+<ul>
+<li>同步提交任务</li>
+</ul>
+<pre><code>dispatch_sync(dispatch_queue_t queue, DISPATCH_NOESCAPE dispatch_block_t block);
+
+dispatch_sync_f(dispatch_queue_t queue,
+        void *_Nullable context, dispatch_function_t work);
+</code></pre><p><code>GCD</code>提供了两种方法进行同步提交任务，第一种方法是将代码块以同步的方式提交给queue队列。第一个参数是目标队列，第二个参数为代码块。<br>第二种方式是将函数以同步的方式提交给队列，还包括了content 上下文。</p>
+<ul>
+<li><p>异步的方式提交任务</p>
+<p>  dispatch_async(dispatch_queue_t queue, dispatch_block_t block);<br>  dispatch_async_f(dispatch_queue_t queue,</p>
+<pre><code>void *_Nullable context, dispatch_function_t work);
+</code></pre></li>
+</ul>
+<p>同步异步的方法名只差一个a字母，一个以同步方式执行任务，一个以异步的方式执行任务，后者在开发中最常用。<br>大致用法如下：</p>
+<pre><code>dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^(void) {
+                //code
+
+                dispatch_async(dispatch_get_main_queue(), ^(void) {
+                    //code
+                });
+            });
+</code></pre><p>先异步执行代码块，在执行完之后，可能会刷新页面、修改UI等步骤，需要到主线程中执行。</p>
+<p>上面我们说了有3种创建队列的方式，又有两种队列执行方式，所以按照正常情况下会有6中组合方式。</p>
+<ul>
+<li>1、同步(sync) + 并行  //没开启新线程 串行执行任务</li>
+<li>2、同步(sync) + 串行  // 没开启新线程 串行执行任务</li>
+<li>3、同步(sync) + 主队列 //导致死锁 引发程序奔溃</li>
+<li>4、异步(async) + 并行 // 开启新线程、并行执行任务</li>
+<li>5、异步(async) + 串行 // 开启新线程，串行执行任务</li>
+<li>6、异步(async) + 主队列 // 没开启新线程 串行执行任务</li>
+</ul>
+<blockquote>
+<p>总结：同步异步觉得是否开启新线程，并发串行决定任务的执行方式。</p>
+</blockquote>
+<h3 id="其他常用方法"><a href="#其他常用方法" class="headerlink" title="其他常用方法"></a>其他常用方法</h3><h4 id="单次执行任务-dispatch-once"><a href="#单次执行任务-dispatch-once" class="headerlink" title="单次执行任务 dispatch_once()"></a>单次执行任务 dispatch_once()</h4><pre><code>dispatch_once(dispatch_once_t *predicate,
+        DISPATCH_NOESCAPE dispatch_block_t block);
+</code></pre><p>刚开始已经提到了单次执行方法。第一个参数表示<code>dispatch_once_t</code>类型的指针，第二个参数是代码块，在创建代理的时候经常用到。</p>
+<h4 id="多次重复执行任务-dispatch-apply"><a href="#多次重复执行任务-dispatch-apply" class="headerlink" title="多次重复执行任务 dispatch_apply()"></a>多次重复执行任务 dispatch_apply()</h4><p>在<code>GCD</code>中可以多次执行相同代码，使用<code>dispatch_apply()</code>函数，第一个参数表示次数，第二个参数表示执行队列，第三个参数表示代码块。</p>
+<pre><code>void dispatch_apply(size_t iterations,
+        dispatch_queue_t DISPATCH_APPLY_QUEUE_ARG_NULLABILITY queue,
+        DISPATCH_NOESCAPE void (^block)(size_t));
+</code></pre><h4 id="延时方法-dispatch-after"><a href="#延时方法-dispatch-after" class="headerlink" title="延时方法 dispatch_after()"></a>延时方法 dispatch_after()</h4><pre><code>dispatch_after(dispatch_time_t when, dispatch_queue_t queue,
+        dispatch_block_t block);
+</code></pre><p>  延时方法,代码块在延时之后才开始执行：</p>
+<ul>
+<li>第一个参数表示延时时间</li>
+<li>第二个参数表示延迟完执行任务的队列</li>
+<li>第三个参数表示代码块</li>
+</ul>
+<h4 id="GCD-的队列组：dispatch-group"><a href="#GCD-的队列组：dispatch-group" class="headerlink" title="GCD 的队列组：dispatch_group"></a>GCD 的队列组：dispatch_group</h4><p>好饿好饿我真的好饿，最近减肥，太饿了睡觉 明天继续搬砖呢。</p>
+
       
     </div>
 
@@ -622,7 +674,7 @@ dispatch_queue_t mainQueue = dispatch_get_main_queue();
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#GCD简介"><span class="nav-number">1.</span> <span class="nav-text">GCD简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队列和任务"><span class="nav-number">2.</span> <span class="nav-text">队列和任务</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#任务"><span class="nav-number">2.1.</span> <span class="nav-text">任务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#队列"><span class="nav-number">2.2.</span> <span class="nav-text">队列</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队列的创建"><span class="nav-number">3.</span> <span class="nav-text">队列的创建</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#GCD简介"><span class="nav-number">1.</span> <span class="nav-text">GCD简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队列和任务"><span class="nav-number">2.</span> <span class="nav-text">队列和任务</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#任务"><span class="nav-number">2.1.</span> <span class="nav-text">任务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#队列"><span class="nav-number">2.2.</span> <span class="nav-text">队列</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队列的创建"><span class="nav-number">3.</span> <span class="nav-text">队列的创建</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#提交任务"><span class="nav-number">3.1.</span> <span class="nav-text">提交任务</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他常用方法"><span class="nav-number">4.</span> <span class="nav-text">其他常用方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#单次执行任务-dispatch-once"><span class="nav-number">4.1.</span> <span class="nav-text">单次执行任务 dispatch_once()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#多次重复执行任务-dispatch-apply"><span class="nav-number">4.2.</span> <span class="nav-text">多次重复执行任务 dispatch_apply()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#延时方法-dispatch-after"><span class="nav-number">4.3.</span> <span class="nav-text">延时方法 dispatch_after()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#GCD-的队列组：dispatch-group"><span class="nav-number">4.4.</span> <span class="nav-text">GCD 的队列组：dispatch_group</span></a></li></ol></li></ol></div>
             
 
           </div>
