@@ -345,12 +345,24 @@
                 
               
 
-              <time title="Created: 2018-12-28 23:22:07 / Modified: 23:41:29" itemprop="dateCreated datePublished" datetime="2018-12-28T23:22:07+08:00">2018-12-28</time>
+              <time title="Created: 2018-12-28 23:22:07" itemprop="dateCreated datePublished" datetime="2018-12-28T23:22:07+08:00">2018-12-28</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">Edited on</span>
+                
+                <time title="Modified: 2018-12-29 00:32:21" itemprop="dateModified" datetime="2018-12-29T00:32:21+08:00">2018-12-29</time>
               
             
           </span>
@@ -408,7 +420,53 @@
         //code
     });
 </code></pre><p><code>GCD</code>能做的事远不止这些，接下来让我们了解一下<code>GCD</code>。GCD有两个核心概念，分别是任务和队列，接下来让我们介绍一下。</p>
-<h3 id="队列和任务"><a href="#队列和任务" class="headerlink" title="队列和任务"></a>队列和任务</h3><h4 id="队列"><a href="#队列" class="headerlink" title="队列"></a>队列</h4>
+<h3 id="队列和任务"><a href="#队列和任务" class="headerlink" title="队列和任务"></a>队列和任务</h3><h4 id="任务"><a href="#任务" class="headerlink" title="任务"></a>任务</h4><p>任务也就是用户提交给队列的工作单元，也就是代码块，在GCD中需要是以block的形式存在。</p>
+<h4 id="队列"><a href="#队列" class="headerlink" title="队列"></a>队列</h4><p><code>Dispatch Queue</code>(队列) 是用来存放任务的集合，负责管理开发者提交的任务。队列严格遵循<code>FIFO</code>（先进先出）的原则，队列会维护和使用一个线程池来处理用户提交的任务，线程池来执行队列管理的任务。</p>
+<p>队列主要分两种:</p>
+<ul>
+<li><p>串行队列(Serial Dispatch Queue):<br>串行队列中的线程池中只有一个线程，每次只能执行一个任务，前一个任务执行完，才能够执行下一个任务。</p>
+</li>
+<li><p>并行队列（Concurrent Dispatch Queue）:<br>并行队列的线程池提供了多个线程，可以多个任务同时执行。</p>
+</li>
+</ul>
+<h3 id="队列的创建"><a href="#队列的创建" class="headerlink" title="队列的创建"></a>队列的创建</h3><pre><code>//表示队列
+dispatch_queue_t
+//创建队列，第一个参数表示队列的字符串，第二个控制创建队列的类型，
+//若第二个参数为NULL,则表示创建的队列为串行队列
+dispatch_queue_create(const char *_Nullable label,
+        dispatch_queue_attr_t _Nullable attr);
+</code></pre><ul>
+<li>创建串行队列</li>
+</ul>
+<pre><code>//创建串行队列：
+dispatch_queue_t syncqueue = dispatch_queue_create(&quot;robertlee.testqueue&quot;, DISPATCH_QUEUE_SERIAL);
+</code></pre><ul>
+<li>创建并行队列</li>
+</ul>
+<pre><code>//创建并行队列
+dispatch_queue_t casyncqueue = dispatch_queue_create(&quot;robertleel.testqueue&quot;, DISPATCH_QUEUE_CONCURRENT);
+</code></pre><ul>
+<li>获取全局并发队列</li>
+</ul>
+<p>全局并发队列可以同时并行的执行多个任务，系统提供了多个并发的队列，整个应用内共享，可以使用<code>dispatch_get_global_queue()</code>函数获取这些队列</p>
+<pre><code>dispatch_queue_global_t
+//第一个参数用于指定队列的优先级， 第二个参数为以后做准备，填0即可。
+dispatch_get_global_queue(long identifier, unsigned long flags);
+
+//全局并发队列
+dispatch_queue_t globalQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+</code></pre><p>系统宏定义了几个优先级：</p>
+<pre><code>#define DISPATCH_QUEUE_PRIORITY_HIGH 2  //高
+#define DISPATCH_QUEUE_PRIORITY_DEFAULT 0  //中 默认
+#define DISPATCH_QUEUE_PRIORITY_LOW (-2)   //底
+#define DISPATCH_QUEUE_PRIORITY_BACKGROUND INT16_MIN //后台
+</code></pre><ul>
+<li>获取主队列</li>
+</ul>
+<p>GCD自带了一个串行队列，就是主队列，只要提交到主队列中的任务，都会在主线程中执行。通过<code>dispatch_get_main_queue()</code>函数获得主队列</p>
+<pre><code>//获取主队列
+dispatch_queue_t mainQueue = dispatch_get_main_queue();
+</code></pre>
           
         
       
