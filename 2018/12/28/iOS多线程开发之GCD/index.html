@@ -104,25 +104,25 @@
 
 
 
-  <meta name="description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.">
+  <meta name="description" content="GCD简介GCD是Grand Central Dispatch的缩写，是基于C语言。是苹果公司为多核的的并行运算提出的解决方案。GCD负责创建线程和调度需要执行的任务，线程是由系统管理的。 开发中经常使用到GCD里的知识例如：  创建单例的时候：  static dispatch_once_t onceToken;    dispatch_once(&amp;amp;onceToken, ^{">
 <meta name="keywords" content="blogs">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Hello World">
-<meta property="og:url" content="http://robertleeng.com/2018/07/26/hello-world/index.html">
+<meta property="og:title" content="iOS多线程开发之GCD">
+<meta property="og:url" content="http://robertleeng.com/2018/12/28/iOS多线程开发之GCD/index.html">
 <meta property="og:site_name" content="Robert Lee">
-<meta property="og:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.">
+<meta property="og:description" content="GCD简介GCD是Grand Central Dispatch的缩写，是基于C语言。是苹果公司为多核的的并行运算提出的解决方案。GCD负责创建线程和调度需要执行的任务，线程是由系统管理的。 开发中经常使用到GCD里的知识例如：  创建单例的时候：  static dispatch_once_t onceToken;    dispatch_once(&amp;amp;onceToken, ^{">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-12-21T16:38:39.522Z">
+<meta property="og:updated_time" content="2018-12-28T15:41:29.967Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Hello World">
-<meta name="twitter:description" content="Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub.">
+<meta name="twitter:title" content="iOS多线程开发之GCD">
+<meta name="twitter:description" content="GCD简介GCD是Grand Central Dispatch的缩写，是基于C语言。是苹果公司为多核的的并行运算提出的解决方案。GCD负责创建线程和调度需要执行的任务，线程是由系统管理的。 开发中经常使用到GCD里的知识例如：  创建单例的时候：  static dispatch_once_t onceToken;    dispatch_once(&amp;amp;onceToken, ^{">
 
 
 
 
 
 
-  <link rel="canonical" href="http://robertleeng.com/2018/07/26/hello-world/"/>
+  <link rel="canonical" href="http://robertleeng.com/2018/12/28/iOS多线程开发之GCD/"/>
 
 
 
@@ -132,7 +132,7 @@
   };
 </script>
 
-  <title>Hello World | Robert Lee</title>
+  <title>iOS多线程开发之GCD | Robert Lee</title>
   
 
 
@@ -300,7 +300,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://robertleeng.com/2018/07/26/hello-world/">
+    <link itemprop="mainEntityOfPage" href="http://robertleeng.com/2018/12/28/iOS多线程开发之GCD/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Robert Lee">
@@ -317,7 +317,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">Hello World
+          <h1 class="post-title" itemprop="name headline">iOS多线程开发之GCD
 
               
             
@@ -343,24 +343,12 @@
                 
               
 
-              <time title="Created: 2018-07-26 23:07:57" itemprop="dateCreated datePublished" datetime="2018-07-26T23:07:57+08:00">2018-07-26</time>
+              <time title="Created: 2018-12-28 23:22:07 / Modified: 23:41:29" itemprop="dateCreated datePublished" datetime="2018-12-28T23:22:07+08:00">2018-12-28</time>
             
 
             
               
 
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Edited on</span>
-                
-                <time title="Modified: 2018-12-22 00:38:39" itemprop="dateModified" datetime="2018-12-22T00:38:39+08:00">2018-12-22</time>
               
             
           </span>
@@ -393,17 +381,30 @@
       
 
       
-        <p>Welcome to <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/" target="_blank" rel="noopener">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html" target="_blank" rel="noopener">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues" target="_blank" rel="noopener">GitHub</a>.</p>
-<a id="more"></a>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/writing.html" target="_blank" rel="noopener">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/server.html" target="_blank" rel="noopener">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/generating.html" target="_blank" rel="noopener">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-<p>More info: <a href="https://hexo.io/docs/deployment.html" target="_blank" rel="noopener">Deployment</a></p>
-
+        <h3 id="GCD简介"><a href="#GCD简介" class="headerlink" title="GCD简介"></a>GCD简介</h3><p><code>GCD</code>是<code>Grand Central Dispatch</code>的缩写，是基于C语言。是苹果公司为多核的的并行运算提出的解决方案。<code>GCD</code>负责创建线程和调度需要执行的任务，线程是由系统管理的。</p>
+<p>开发中经常使用到GCD里的知识例如：</p>
+<ul>
+<li>创建单例的时候：</li>
+</ul>
+<pre><code>static dispatch_once_t onceToken;
+   dispatch_once(&amp;onceToken, ^{
+       //code
+   });
+</code></pre><p>这个让<code>code</code>只执行一次。</p>
+<ul>
+<li>获取主线程</li>
+</ul>
+<pre><code>dispatch_async(dispatch_get_main_queue(), ^{
+        //code
+    });
+</code></pre><ul>
+<li>异步执行</li>
+</ul>
+<pre><code>dispatch_async(dispatch_queue_create(&quot;robertlee&quot;, DISPATCH_QUEUE_SERIAL), ^{
+        //code
+    });
+</code></pre><p><code>GCD</code>能做的事远不止这些，接下来让我们了解一下<code>GCD</code>。GCD有两个核心概念，分别是任务和队列，接下来让我们介绍一下。</p>
+<h3 id="队列和任务"><a href="#队列和任务" class="headerlink" title="队列和任务"></a>队列和任务</h3><h4 id="队列"><a href="#队列" class="headerlink" title="队列"></a>队列</h4>
       
     </div>
 
@@ -433,15 +434,15 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
+              <a href="/2018/12/28/初识Runtime/" rel="next" title="初识Runtime">
+                <i class="fa fa-chevron-left"></i> 初识Runtime
+              </a>
+            
           </div>
 
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/07/30/我的博客/" rel="prev" title="我的博客">
-                我的博客 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -563,7 +564,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Quick-Start"><span class="nav-number">1.</span> <span class="nav-text">Quick Start</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Create-a-new-post"><span class="nav-number">1.1.</span> <span class="nav-text">Create a new post</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Run-server"><span class="nav-number">1.2.</span> <span class="nav-text">Run server</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Generate-static-files"><span class="nav-number">1.3.</span> <span class="nav-text">Generate static files</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Deploy-to-remote-sites"><span class="nav-number">1.4.</span> <span class="nav-text">Deploy to remote sites</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#GCD简介"><span class="nav-number">1.</span> <span class="nav-text">GCD简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队列和任务"><span class="nav-number">2.</span> <span class="nav-text">队列和任务</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#队列"><span class="nav-number">2.1.</span> <span class="nav-text">队列</span></a></li></ol></li></ol></div>
             
 
           </div>
