@@ -112,10 +112,13 @@
 <meta property="og:site_name" content="Robert Lee">
 <meta property="og:description" content="RuntimeObjective-c作为一门动态编程语言，它将静态语言中在编译和链接时期做的事，放在运行时再做处理。这样使Objective-c具备了灵活的动态特性。为此苹果维护了一个运行时系统（runtime system）来执行编译后的代码。运行时代码是开源的，你可以在runtime这里查看到源码。 简介简单的说，当你使用一个方法的时候： //调用方法(发送消息) [self op]  //编">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-12-29T14:10:25.852Z">
+<meta property="og:image" content="http://robertleeng.com/img/metaClass.png">
+<meta property="og:image" content="http://robertleeng.com/img/消息转发.png">
+<meta property="og:updated_time" content="2018-12-29T14:23:25.899Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="初识Runtime">
 <meta name="twitter:description" content="RuntimeObjective-c作为一门动态编程语言，它将静态语言中在编译和链接时期做的事，放在运行时再做处理。这样使Objective-c具备了灵活的动态特性。为此苹果维护了一个运行时系统（runtime system）来执行编译后的代码。运行时代码是开源的，你可以在runtime这里查看到源码。 简介简单的说，当你使用一个方法的时候： //调用方法(发送消息) [self op]  //编">
+<meta name="twitter:image" content="http://robertleeng.com/img/metaClass.png">
 
 
 
@@ -360,7 +363,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-29 22:10:25" itemprop="dateModified" datetime="2018-12-29T22:10:25+08:00">2018-12-29</time>
+                <time title="Modified: 2018-12-29 22:23:25" itemprop="dateModified" datetime="2018-12-29T22:23:25+08:00">2018-12-29</time>
               
             
           </span>
@@ -413,6 +416,7 @@ objc_msgSend(id self, SEL op, arg1, arg2)
 <li>Method Swizzling 黑魔法</li>
 </ul>
 <p>在<code>Runtime</code>中对象（object）、类（class）、方法(method)等等都是以结构体的形式存在。我们先来看看这些结构体。</p>
+<a id="more"></a>
 <h4 id="Runtime数据结构"><a href="#Runtime数据结构" class="headerlink" title="Runtime数据结构"></a>Runtime数据结构</h4><h4 id="对象（object）"><a href="#对象（object）" class="headerlink" title="对象（object）"></a>对象（object）</h4><pre><code>/// Represents an instance of a class.
 /// 对象
 struct objc_object {
@@ -450,7 +454,8 @@ struct objc_class {
 <li>cache : 缓存</li>
 <li>protocols : 遵守的协议</li>
 </ul>
-<p>为了处理类和对象的关系，runtime库创建了元类（Meta Class),类对象所属类型叫做元类，每个对象都有字的元类，其中包含的信息叫做元数据。<br><code>objc_object</code>结构体中的<code>isa</code>指向类，而类对象的isa指针指向了元类，其中过程如下：<br>TODO：如图所示</p>
+<p>为了处理类和对象的关系，runtime库创建了元类（Meta Class),类对象所属类型叫做元类，每个对象都有字的元类，其中包含的信息叫做元数据。<br><code>objc_object</code>结构体中的<code>isa</code>指向类，而类对象的isa指针指向了元类，其中过程如下：</p>
+<p><img src="/img/metaClass.png" alt="截图"></p>
 <p>基类的meta_class的isa指针指向的是自己、super_class指向的是基类。基类继承体系下的meta_class的isa指针都指向基类的meta_class。</p>
 <hr>
 <h4 id="方法（method）"><a href="#方法（method）" class="headerlink" title="方法（method）"></a>方法（method）</h4><pre><code>//方法列表
@@ -698,7 +703,7 @@ return [super forwardingTargetForSelector:aSelector];
     }
 }
 </code></pre><p>以上就是Runtime在未找到方法实现时会做的三个流程。这个流程的图如图所示：</p>
-<p>TODO:<br>缺图</p>
+<p><img src="/img/消息转发.png" alt="截图"></p>
 <h4 id="关联对象"><a href="#关联对象" class="headerlink" title="关联对象"></a>关联对象</h4><pre><code>一般使用关联对象就是给分类添加属性
 
 //关联对象
