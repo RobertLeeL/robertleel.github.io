@@ -362,7 +362,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-29 01:04:08" itemprop="dateModified" datetime="2018-12-29T01:04:08+08:00">2018-12-29</time>
+                <time title="Modified: 2018-12-29 22:49:14" itemprop="dateModified" datetime="2018-12-29T22:49:14+08:00">2018-12-29</time>
               
             
           </span>
@@ -517,7 +517,45 @@ dispatch_sync_f(dispatch_queue_t queue,
 <li>第二个参数表示延迟完执行任务的队列</li>
 <li>第三个参数表示代码块</li>
 </ul>
-<h4 id="GCD-的队列组：dispatch-group"><a href="#GCD-的队列组：dispatch-group" class="headerlink" title="GCD 的队列组：dispatch_group"></a>GCD 的队列组：dispatch_group</h4><p>好饿好饿我真的好饿，最近减肥，太饿了睡觉 明天继续搬砖呢。</p>
+<h4 id="GCD-的队列组：dispatch-group"><a href="#GCD-的队列组：dispatch-group" class="headerlink" title="GCD 的队列组：dispatch_group"></a>GCD 的队列组：dispatch_group</h4><p>有时候我们在请求页面数据的时候，可能需要请求2个接口或者多个，我们希望所有请求完之后再刷新界面，这个时候如何保证接口都请求完成呢，这就是<code>GCD</code>队列组的用处了。</p>
+<pre><code>dispatch_group_t group = dispatch_group_create();
+
+dispatch_group_enter(group);
+
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    NSLog(@&quot;0&quot;);
+});
+
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    NSLog(@&quot;1&quot;);
+});
+
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    NSLog(@&quot;2&quot;);
+});
+
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    NSLog(@&quot;3&quot;);
+});
+
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    NSLog(@&quot;4&quot;);
+});
+
+dispatch_group_leave(group);
+
+dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+    NSLog(@&quot;end&quot;);
+});
+</code></pre><p>也可以使用<code>dispatch_semaphore_t</code>和<code>dispatch_group_wait</code>实现，但是我们后面会介绍这个方法。</p>
+<h5 id="GCD-信号量-dispatch-semaphore"><a href="#GCD-信号量-dispatch-semaphore" class="headerlink" title="GCD 信号量 dispatch_semaphore"></a>GCD 信号量 dispatch_semaphore</h5><p>信号量在使用线程同步的时候经常用到，<code>dispatch_semaphore</code>有三种方法可以使用</p>
+<p>dispatch_semaphore_create：初始化一个信号量<br>dispatch_semaphore_signal：发送一个信号，让信号总量加1<br>dispatch_semaphore_wait：可以使总信号量减1，当信号总量为0时就会一直等待（阻塞所在线程），否则就可以正常执行。</p>
+<p>在YYCache中如何使用<code>dispatch_semaphore</code>来给线程加锁：</p>
+<p>在<code>YYDiskCache</code>中使用的线程锁为：定义了一个信号量：<code>dispatch_semaphore_t _lock;</code></p>
+<pre><code>#define Lock() dispatch_semaphore_wait(self-&gt;_lock, DISPATCH_TIME_FOREVER)
+#define Unlock() dispatch_semaphore_signal(self-&gt;_lock)
+</code></pre><p>这就是GCD,有很多未使用的功能都没有介绍，下次遇到再补充。</p>
+<h4 id="感谢："><a href="#感谢：" class="headerlink" title="感谢："></a>感谢：</h4><p><a href="https://juejin.im/post/5a90de68f265da4e9b592b40" target="_blank" rel="noopener">iOS多线程：『GCD』详尽总结</a></p>
 
           
         

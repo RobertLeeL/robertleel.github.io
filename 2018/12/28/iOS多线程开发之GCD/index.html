@@ -112,7 +112,7 @@
 <meta property="og:site_name" content="Robert Lee">
 <meta property="og:description" content="GCD简介GCD是Grand Central Dispatch的缩写，是基于C语言。是苹果公司为多核的的并行运算提出的解决方案。GCD负责创建线程和调度需要执行的任务，线程是由系统管理的。 开发中经常使用到GCD里的知识例如：  创建单例的时候：  static dispatch_once_t onceToken;    dispatch_once(&amp;amp;onceToken, ^{">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2018-12-28T17:04:08.524Z">
+<meta property="og:updated_time" content="2018-12-29T14:49:14.350Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="iOS多线程开发之GCD">
 <meta name="twitter:description" content="GCD简介GCD是Grand Central Dispatch的缩写，是基于C语言。是苹果公司为多核的的并行运算提出的解决方案。GCD负责创建线程和调度需要执行的任务，线程是由系统管理的。 开发中经常使用到GCD里的知识例如：  创建单例的时候：  static dispatch_once_t onceToken;    dispatch_once(&amp;amp;onceToken, ^{">
@@ -360,7 +360,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-29 01:04:08" itemprop="dateModified" datetime="2018-12-29T01:04:08+08:00">2018-12-29</time>
+                <time title="Modified: 2018-12-29 22:49:14" itemprop="dateModified" datetime="2018-12-29T22:49:14+08:00">2018-12-29</time>
               
             
           </span>
@@ -513,7 +513,45 @@ dispatch_sync_f(dispatch_queue_t queue,
 <li>第二个参数表示延迟完执行任务的队列</li>
 <li>第三个参数表示代码块</li>
 </ul>
-<h4 id="GCD-的队列组：dispatch-group"><a href="#GCD-的队列组：dispatch-group" class="headerlink" title="GCD 的队列组：dispatch_group"></a>GCD 的队列组：dispatch_group</h4><p>好饿好饿我真的好饿，最近减肥，太饿了睡觉 明天继续搬砖呢。</p>
+<h4 id="GCD-的队列组：dispatch-group"><a href="#GCD-的队列组：dispatch-group" class="headerlink" title="GCD 的队列组：dispatch_group"></a>GCD 的队列组：dispatch_group</h4><p>有时候我们在请求页面数据的时候，可能需要请求2个接口或者多个，我们希望所有请求完之后再刷新界面，这个时候如何保证接口都请求完成呢，这就是<code>GCD</code>队列组的用处了。</p>
+<pre><code>dispatch_group_t group = dispatch_group_create();
+
+dispatch_group_enter(group);
+
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    NSLog(@&quot;0&quot;);
+});
+
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    NSLog(@&quot;1&quot;);
+});
+
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    NSLog(@&quot;2&quot;);
+});
+
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    NSLog(@&quot;3&quot;);
+});
+
+dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    NSLog(@&quot;4&quot;);
+});
+
+dispatch_group_leave(group);
+
+dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+    NSLog(@&quot;end&quot;);
+});
+</code></pre><p>也可以使用<code>dispatch_semaphore_t</code>和<code>dispatch_group_wait</code>实现，但是我们后面会介绍这个方法。</p>
+<h5 id="GCD-信号量-dispatch-semaphore"><a href="#GCD-信号量-dispatch-semaphore" class="headerlink" title="GCD 信号量 dispatch_semaphore"></a>GCD 信号量 dispatch_semaphore</h5><p>信号量在使用线程同步的时候经常用到，<code>dispatch_semaphore</code>有三种方法可以使用</p>
+<p>dispatch_semaphore_create：初始化一个信号量<br>dispatch_semaphore_signal：发送一个信号，让信号总量加1<br>dispatch_semaphore_wait：可以使总信号量减1，当信号总量为0时就会一直等待（阻塞所在线程），否则就可以正常执行。</p>
+<p>在YYCache中如何使用<code>dispatch_semaphore</code>来给线程加锁：</p>
+<p>在<code>YYDiskCache</code>中使用的线程锁为：定义了一个信号量：<code>dispatch_semaphore_t _lock;</code></p>
+<pre><code>#define Lock() dispatch_semaphore_wait(self-&gt;_lock, DISPATCH_TIME_FOREVER)
+#define Unlock() dispatch_semaphore_signal(self-&gt;_lock)
+</code></pre><p>这就是GCD,有很多未使用的功能都没有介绍，下次遇到再补充。</p>
+<h4 id="感谢："><a href="#感谢：" class="headerlink" title="感谢："></a>感谢：</h4><p><a href="https://juejin.im/post/5a90de68f265da4e9b592b40" target="_blank" rel="noopener">iOS多线程：『GCD』详尽总结</a></p>
 
       
     </div>
@@ -674,7 +712,7 @@ dispatch_sync_f(dispatch_queue_t queue,
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#GCD简介"><span class="nav-number">1.</span> <span class="nav-text">GCD简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队列和任务"><span class="nav-number">2.</span> <span class="nav-text">队列和任务</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#任务"><span class="nav-number">2.1.</span> <span class="nav-text">任务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#队列"><span class="nav-number">2.2.</span> <span class="nav-text">队列</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队列的创建"><span class="nav-number">3.</span> <span class="nav-text">队列的创建</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#提交任务"><span class="nav-number">3.1.</span> <span class="nav-text">提交任务</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他常用方法"><span class="nav-number">4.</span> <span class="nav-text">其他常用方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#单次执行任务-dispatch-once"><span class="nav-number">4.1.</span> <span class="nav-text">单次执行任务 dispatch_once()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#多次重复执行任务-dispatch-apply"><span class="nav-number">4.2.</span> <span class="nav-text">多次重复执行任务 dispatch_apply()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#延时方法-dispatch-after"><span class="nav-number">4.3.</span> <span class="nav-text">延时方法 dispatch_after()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#GCD-的队列组：dispatch-group"><span class="nav-number">4.4.</span> <span class="nav-text">GCD 的队列组：dispatch_group</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#GCD简介"><span class="nav-number">1.</span> <span class="nav-text">GCD简介</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队列和任务"><span class="nav-number">2.</span> <span class="nav-text">队列和任务</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#任务"><span class="nav-number">2.1.</span> <span class="nav-text">任务</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#队列"><span class="nav-number">2.2.</span> <span class="nav-text">队列</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#队列的创建"><span class="nav-number">3.</span> <span class="nav-text">队列的创建</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#提交任务"><span class="nav-number">3.1.</span> <span class="nav-text">提交任务</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其他常用方法"><span class="nav-number">4.</span> <span class="nav-text">其他常用方法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#单次执行任务-dispatch-once"><span class="nav-number">4.1.</span> <span class="nav-text">单次执行任务 dispatch_once()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#多次重复执行任务-dispatch-apply"><span class="nav-number">4.2.</span> <span class="nav-text">多次重复执行任务 dispatch_apply()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#延时方法-dispatch-after"><span class="nav-number">4.3.</span> <span class="nav-text">延时方法 dispatch_after()</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#GCD-的队列组：dispatch-group"><span class="nav-number">4.4.</span> <span class="nav-text">GCD 的队列组：dispatch_group</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#GCD-信号量-dispatch-semaphore"><span class="nav-number">4.4.1.</span> <span class="nav-text">GCD 信号量 dispatch_semaphore</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#感谢："><span class="nav-number">4.5.</span> <span class="nav-text">感谢：</span></a></li></ol></li></ol></div>
             
 
           </div>
