@@ -115,7 +115,7 @@
 <meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
 <meta property="og:image" content="http://robertleeng.com/img/NSURLSessionTask.png">
 <meta property="og:image" content="http://robertleeng.com/img/AFNetWorking.png">
-<meta property="og:updated_time" content="2018-12-27T15:17:52.529Z">
+<meta property="og:updated_time" content="2018-12-30T15:28:40.958Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
@@ -364,7 +364,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2018-12-27 23:17:52" itemprop="dateModified" datetime="2018-12-27T23:17:52+08:00">2018-12-27</time>
+                <time title="Modified: 2018-12-30 23:28:40" itemprop="dateModified" datetime="2018-12-30T23:28:40+08:00">2018-12-30</time>
               
             
           </span>
@@ -673,8 +673,41 @@ NSString *url=@&quot;https://www.tking.cn/showapi/mobile/pub/site/1002/active_sh
       //请求失败
       NSLog(@&quot;error--&gt;%@&quot;,error);
     }];
-</code></pre><p>上面就是一次简单的Get请求方法。</p>
-<h5 id="AFURLSessionManager"><a href="#AFURLSessionManager" class="headerlink" title="AFURLSessionManager"></a>AFURLSessionManager</h5>
+</code></pre><p>上面就是一次简单的Get请求方法。<br>使用<code>AFHTTPSessionManager</code>就是进行一次请求，接下来让我们一步步研究一下<code>AFNetworking</code>。</p>
+<h5 id="AFURLSessionManager"><a href="#AFURLSessionManager" class="headerlink" title="AFURLSessionManager"></a>AFURLSessionManager</h5><p>先来看一下<code>AFURLSessionManager</code>类的接口文件。</p>
+<pre><code>//进行下载的对话
+@property (readonly, nonatomic, strong) NSURLSession *session;
+
+//操作队列，当代理进行回调的时候使用
+@property (readonly, nonatomic, strong) NSOperationQueue *operationQueue;
+
+//数据解码
+@property (nonatomic, strong) id &lt;AFURLResponseSerialization&gt; responseSerializer;
+
+//安全策略
+@property (nonatomic, strong) AFSecurityPolicy *securityPolicy;
+
+//网络状态管理
+@property (readwrite, nonatomic, strong) AFNetworkReachabilityManager *reachabilityManager;
+
+//正在执行的任务
+@property (readonly, nonatomic, strong) NSArray &lt;NSURLSessionTask *&gt; *tasks;
+
+//正在执行的data任务
+@property (readonly, nonatomic, strong) NSArray &lt;NSURLSessionDataTask *&gt; *dataTasks;
+
+//正在执行的upload任务
+@property (readonly, nonatomic, strong) NSArray &lt;NSURLSessionUploadTask *&gt; *uploadTasks;
+
+//正在执行的download任务
+@property (readonly, nonatomic, strong) NSArray &lt;NSURLSessionDownloadTask *&gt; *downloadTasks;
+
+//回调的线程 为空就默认主线程
+@property (nonatomic, strong, nullable) dispatch_queue_t completionQueue;
+
+//回调的线程组 为空则使用私有线程组
+@property (nonatomic, strong, nullable) dispatch_group_t completionGroup;
+</code></pre>
       
     </div>
 
