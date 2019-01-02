@@ -115,7 +115,7 @@
 <meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
 <meta property="og:image" content="http://robertleeng.com/img/NSURLSessionTask.png">
 <meta property="og:image" content="http://robertleeng.com/img/AFNetWorking.png">
-<meta property="og:updated_time" content="2019-01-01T15:05:06.734Z">
+<meta property="og:updated_time" content="2019-01-02T14:22:31.048Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
@@ -364,7 +364,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2019-01-01 23:05:06" itemprop="dateModified" datetime="2019-01-01T23:05:06+08:00">2019-01-01</time>
+                <time title="Modified: 2019-01-02 22:22:31" itemprop="dateModified" datetime="2019-01-02T22:22:31+08:00">2019-01-02</time>
               
             
           </span>
@@ -830,7 +830,118 @@ static inline BOOL af_addMethod(Class theClass, SEL selector, Method method) {
         [session finishTasksAndInvalidate];
     }
 }
-</code></pre><h6 id="AFURLSessionManager-1"><a href="#AFURLSessionManager-1" class="headerlink" title="AFURLSessionManager"></a>AFURLSessionManager</h6>
+</code></pre><h6 id="AFURLSessionManager-1"><a href="#AFURLSessionManager-1" class="headerlink" title="AFURLSessionManager"></a>AFURLSessionManager</h6><pre><code>//初始化方法，设置会话的配置
+- (instancetype)initWithSessionConfiguration:(NSURLSessionConfiguration *)configuration {
+    self = [super init];
+    if (!self) {
+        return nil;
+    }
+
+    if (!configuration) {
+        configuration = [NSURLSessionConfiguration defaultSessionConfiguration];
+    }
+
+    self.sessionConfiguration = configuration;
+
+    self.operationQueue = [[NSOperationQueue alloc] init];
+    self.operationQueue.maxConcurrentOperationCount = 1;
+
+    self.session = [NSURLSession sessionWithConfiguration:self.sessionConfiguration delegate:self delegateQueue:self.operationQueue];
+
+    self.responseSerializer = [AFJSONResponseSerializer serializer];
+
+    self.securityPolicy = [AFSecurityPolicy defaultPolicy];
+
+#if !TARGET_OS_WATCH
+    self.reachabilityManager = [AFNetworkReachabilityManager sharedManager];
+#endif
+
+    self.mutableTaskDelegatesKeyedByTaskIdentifier = [[NSMutableDictionary alloc] init];
+
+    self.lock = [[NSLock alloc] init];
+    self.lock.name = AFURLSessionManagerLockName;
+
+    //把当前session的task 添加到AFURLSessionManagerTaskDelegate中
+    [self.session getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
+        for (NSURLSessionDataTask *task in dataTasks) {
+            [self addDelegateForDataTask:task uploadProgress:nil downloadProgress:nil completionHandler:nil];
+        }
+
+        for (NSURLSessionUploadTask *uploadTask in uploadTasks) {
+            [self addDelegateForUploadTask:uploadTask progress:nil completionHandler:nil];
+        }
+
+        for (NSURLSessionDownloadTask *downloadTask in downloadTasks) {
+            [self addDelegateForDownloadTask:downloadTask progress:nil destination:nil completionHandler:nil];
+        }
+    }];
+
+    return self;
+}
+</code></pre><p>接下来我们看看是如何把当前的<code>task</code>用<code>AFURLSessionManagerTaskDelegate</code>储存的。</p>
+<pre><code>- (void)addDelegateForDataTask:(NSURLSessionDataTask *)dataTask
+                uploadProgress:(nullable void (^)(NSProgress *uploadProgress)) uploadProgressBlock
+              downloadProgress:(nullable void (^)(NSProgress *downloadProgress)) downloadProgressBlock
+             completionHandler:(void (^)(NSURLResponse *response, id responseObject, NSError *error))completionHandler
+{
+    //根据当前的dataTask初始化一个AFURLSessionManagerTaskDelegate
+    AFURLSessionManagerTaskDelegate *delegate = [[AFURLSessionManagerTaskDelegate alloc] initWithTask:dataTask];
+    delegate.manager = self;
+    delegate.completionHandler = completionHandler;
+
+    dataTask.taskDescription = self.taskDescriptionForSessionTasks;
+    //把当前的delegate 存入mutableTaskDelegatesKeyedByTaskIdentifier
+    [self setDelegate:delegate forTask:dataTask];
+
+    delegate.uploadProgressBlock = uploadProgressBlock;
+    delegate.downloadProgressBlock = downloadProgressBlock;
+}
+
+
+- (void)setDelegate:(AFURLSessionManagerTaskDelegate *)delegate
+            forTask:(NSURLSessionTask *)task
+{
+    NSParameterAssert(task);
+    NSParameterAssert(delegate);
+
+    //线程锁
+    [self.lock lock];
+    self.mutableTaskDelegatesKeyedByTaskIdentifier[@(task.taskIdentifier)] = delegate;
+    //添加监听
+    [self addNotificationObserverForTask:task];
+    [self.lock unlock];
+}
+
+//监听当前的task开始和挂起
+- (void)addNotificationObserverForTask:(NSURLSessionTask *)task {
+[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(taskDidResume:) name:AFNSURLSessionTaskDidResumeNotification object:task];
+[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(taskDidSuspend:) name:AFNSURLSessionTaskDidSuspendNotification object:task];
+}
+</code></pre><p>添加<code>uploadTask</code>和<code>downloadTask</code>方法实现相同，就不介绍了。接下来我们来看上面提到AFNetworking实现的方法。</p>
+<pre><code>- (NSURLSessionDataTask *)dataTaskWithRequest:(NSURLRequest *)request
+                            completionHandler:(void (^)(NSURLResponse *response, id responseObject, NSError *error))completionHandler
+{
+    return [self dataTaskWithRequest:request uploadProgress:nil downloadProgress:nil completionHandler:completionHandler];
+}
+
+- (NSURLSessionDataTask *)dataTaskWithRequest:(NSURLRequest *)request
+                           uploadProgress:(nullable void (^)(NSProgress *uploadProgress)) uploadProgressBlock
+                         downloadProgress:(nullable void (^)(NSProgress *downloadProgress)) downloadProgressBlock
+                        completionHandler:(nullable void (^)(NSURLResponse *response, id _Nullable responseObject,  NSError * _Nullable error))completionHandler {
+
+__block NSURLSessionDataTask *dataTask = nil;
+//生成dataTask
+url_session_manager_create_task_safely(^{
+    dataTask = [self.session dataTaskWithRequest:request];
+});
+
+//把当前的dataTask封装成delegate 放在mutableTaskDelegatesKeyedByTaskIdentifier中，上面已经介绍过
+[self addDelegateForDataTask:dataTask uploadProgress:uploadProgressBlock downloadProgress:downloadProgressBlock completionHandler:completionHandler];
+
+return dataTask;
+}
+</code></pre><p><code>upload</code>和<code>download</code>方法相似。</p>
+
       
     </div>
 
