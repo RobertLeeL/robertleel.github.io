@@ -115,7 +115,7 @@
 <meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
 <meta property="og:image" content="http://robertleeng.com/img/NSURLSessionTask.png">
 <meta property="og:image" content="http://robertleeng.com/img/AFNetWorking.png">
-<meta property="og:updated_time" content="2019-01-02T15:11:32.955Z">
+<meta property="og:updated_time" content="2019-01-02T15:39:03.249Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
@@ -364,7 +364,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2019-01-02 23:11:32" itemprop="dateModified" datetime="2019-01-02T23:11:32+08:00">2019-01-02</time>
+                <time title="Modified: 2019-01-02 23:39:03" itemprop="dateModified" datetime="2019-01-02T23:39:03+08:00">2019-01-02</time>
               
             
           </span>
@@ -1148,7 +1148,76 @@ didCompleteWithError:(NSError *)error
 </code></pre><ul>
 <li>NSURLSessionDataDelegate</li>
 </ul>
+<pre><code>//告诉delegate已经接受到服务器的初始应答, 准备接下来的数据任务的操作.
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+didReceiveResponse:(NSURLResponse *)response
+ completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler
+{
+    NSURLSessionResponseDisposition disposition = NSURLSessionResponseAllow;
 
+    //回调
+    if (self.dataTaskDidReceiveResponse) {
+        disposition = self.dataTaskDidReceiveResponse(session, dataTask, response);
+    }
+
+    if (completionHandler) {
+        completionHandler(disposition);
+    }
+}
+
+
+//告诉代理数据任务已更改为下载任务
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+didBecomeDownloadTask:(NSURLSessionDownloadTask *)downloadTask
+{
+  //获取delegate
+    AFURLSessionManagerTaskDelegate *delegate = [self delegateForTask:dataTask];
+    if (delegate) {
+      //如果delegate存在则移除 储存downloadTask
+        [self removeDelegateForTask:dataTask];
+        [self setDelegate:delegate forTask:downloadTask];
+    }
+
+    //回调
+    if (self.dataTaskDidBecomeDownloadTask) {
+        self.dataTaskDidBecomeDownloadTask(session, dataTask, downloadTask);
+    }
+}
+
+//收到数据的时候回调
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+    didReceiveData:(NSData *)data
+{
+    //获取delegate 并调用delegate中的会话代理方法
+    AFURLSessionManagerTaskDelegate *delegate = [self delegateForTask:dataTask];
+    [delegate URLSession:session dataTask:dataTask didReceiveData:data];
+
+    //回调
+    if (self.dataTaskDidReceiveData) {
+        self.dataTaskDidReceiveData(session, dataTask, data);
+    }
+}
+
+
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+ willCacheResponse:(NSCachedURLResponse *)proposedResponse
+ completionHandler:(void (^)(NSCachedURLResponse *cachedResponse))completionHandler
+{
+    NSCachedURLResponse *cachedResponse = proposedResponse;
+
+    if (self.dataTaskWillCacheResponse) {
+        cachedResponse = self.dataTaskWillCacheResponse(session, dataTask, proposedResponse);
+    }
+
+    if (completionHandler) {
+        completionHandler(cachedResponse);
+    }
+}
+</code></pre>
       
     </div>
 
