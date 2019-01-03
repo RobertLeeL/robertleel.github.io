@@ -115,7 +115,7 @@
 <meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
 <meta property="og:image" content="http://robertleeng.com/img/NSURLSessionTask.png">
 <meta property="og:image" content="http://robertleeng.com/img/AFNetWorking.png">
-<meta property="og:updated_time" content="2019-01-02T15:39:03.249Z">
+<meta property="og:updated_time" content="2019-01-03T14:13:14.283Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
@@ -364,7 +364,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2019-01-02 23:39:03" itemprop="dateModified" datetime="2019-01-02T23:39:03+08:00">2019-01-02</time>
+                <time title="Modified: 2019-01-03 22:13:14" itemprop="dateModified" datetime="2019-01-03T22:13:14+08:00">2019-01-03</time>
               
             
           </span>
@@ -802,7 +802,7 @@ static inline BOOL af_addMethod(Class theClass, SEL selector, Method method) {
     return class_addMethod(theClass, selector,  method_getImplementation(method),  method_getTypeEncoding(method));
 }
 
-//当该类在Runtime编译的时候运行的方法
+//当该类在Runtime编译的时候运行的方法，主要重新写NSURLSession的resume和suspend方法，调用该方法的时候发出代理
 + (void)load {
   //这段代码是解决iOS7、iOS8中的方法，源码中有详细的介绍 就是交换resume方法
     if (NSClassFromString(@&quot;NSURLSessionTask&quot;)) {
@@ -1201,7 +1201,7 @@ didBecomeDownloadTask:(NSURLSessionDownloadTask *)downloadTask
     }
 }
 
-
+//询问委托数据（或上传）任务是否应将响应存储在缓存中。
 - (void)URLSession:(NSURLSession *)session
           dataTask:(NSURLSessionDataTask *)dataTask
  willCacheResponse:(NSCachedURLResponse *)proposedResponse
@@ -1217,7 +1217,91 @@ didBecomeDownloadTask:(NSURLSessionDownloadTask *)downloadTask
         completionHandler(cachedResponse);
     }
 }
-</code></pre>
+
+//会话进入后台调用的代理
+- (void)URLSessionDidFinishEventsForBackgroundURLSession:(NSURLSession *)session {
+    if (self.didFinishEventsForBackgroundURLSession) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.didFinishEventsForBackgroundURLSession(session);
+        });
+    }
+}
+</code></pre><ul>
+<li>NSURLSessionDownloadDelegate</li>
+</ul>
+<pre><code>//下载完成调用存放在临时文件路径
+- (void)URLSession:(NSURLSession *)session
+      downloadTask:(NSURLSessionDownloadTask *)downloadTask
+didFinishDownloadingToURL:(NSURL *)location
+{   
+  //获取当前delegate
+    AFURLSessionManagerTaskDelegate *delegate = [self delegateForTask:downloadTask];
+    if (self.downloadTaskDidFinishDownloading) {
+      //获取fileURl
+        NSURL *fileURL = self.downloadTaskDidFinishDownloading(session, downloadTask, location);
+        if (fileURL) {
+            delegate.downloadFileURL = fileURL;
+            NSError *error = nil;
+
+            //把临时文件移到目标地址
+            if (![[NSFileManager defaultManager] moveItemAtURL:location toURL:fileURL error:&amp;error]) {
+                //发送通知
+                [[NSNotificationCenter defaultCenter] postNotificationName:AFURLSessionDownloadTaskDidFailToMoveFileNotification object:downloadTask userInfo:error.userInfo];
+            }
+
+            return;
+        }
+    }
+
+    if (delegate) {
+      //调用delegate中的代理方法················
+        [delegate URLSession:session downloadTask:downloadTask didFinishDownloadingToURL:location];
+    }
+
+    //下载进度代理方法
+    - (void)URLSession:(NSURLSession *)session
+          downloadTask:(NSURLSessionDownloadTask *)downloadTask
+          didWriteData:(int64_t)bytesWritten
+     totalBytesWritten:(int64_t)totalBytesWritten
+    totalBytesExpectedToWrite:(int64_t)totalBytesExpectedToWrite
+    {
+
+        AFURLSessionManagerTaskDelegate *delegate = [self delegateForTask:downloadTask];
+        //调用delegate中的代理方法················
+        if (delegate) {
+            [delegate URLSession:session downloadTask:downloadTask didWriteData:bytesWritten totalBytesWritten:totalBytesWritten totalBytesExpectedToWrite:totalBytesExpectedToWrite];
+        }
+
+        //回调
+        if (self.downloadTaskDidWriteData) {
+            self.downloadTaskDidWriteData(session, downloadTask, bytesWritten, totalBytesWritten, totalBytesExpectedToWrite);
+        }
+    }
+
+    //断点续下载
+    - (void)URLSession:(NSURLSession *)session
+          downloadTask:(NSURLSessionDownloadTask *)downloadTask
+     didResumeAtOffset:(int64_t)fileOffset
+    expectedTotalBytes:(int64_t)expectedTotalBytes
+    {
+
+        AFURLSessionManagerTaskDelegate *delegate = [self delegateForTask:downloadTask];
+
+        if (delegate) {
+            [delegate URLSession:session downloadTask:downloadTask didResumeAtOffset:fileOffset expectedTotalBytes:expectedTotalBytes];
+        }
+
+        if (self.downloadTaskDidResume) {
+            self.downloadTaskDidResume(session, downloadTask, fileOffset, expectedTotalBytes);
+        }
+    }
+</code></pre><p>这就是<code>AFURLSessionManager</code>完整的实现文件。作用很明显</p>
+<blockquote>
+<blockquote>
+<p>1、创建管理NSURLSession<br>2、管理所有Task<br>3、实现 NSURLSessionDelegate 等协议中的代理方法<br>4、引入安全策略和网络监听等</p>
+</blockquote>
+</blockquote>
+<h4 id="AFHTTPSessionManager"><a href="#AFHTTPSessionManager" class="headerlink" title="AFHTTPSessionManager"></a>AFHTTPSessionManager</h4>
       
     </div>
 
@@ -1387,7 +1471,7 @@ didBecomeDownloadTask:(NSURLSessionDownloadTask *)downloadTask
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AFNetworking-3-2-1"><span class="nav-number">1.</span> <span class="nav-text">AFNetworking 3.2.1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSURLConnection"><span class="nav-number">2.</span> <span class="nav-text">NSURLConnection</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDelegate"><span class="nav-number">2.1.</span> <span class="nav-text">NSURLConnectionDelegate</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDataDelegate"><span class="nav-number">2.2.</span> <span class="nav-text">NSURLConnectionDataDelegate</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSURLSession"><span class="nav-number">3.</span> <span class="nav-text">NSURLSession</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLSessionConfiguration-类"><span class="nav-number">3.1.</span> <span class="nav-text">NSURLSessionConfiguration 类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLSession-类"><span class="nav-number">3.2.</span> <span class="nav-text">NSURLSession 类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking"><span class="nav-number">3.3.</span> <span class="nav-text">AFNetworking</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking-简单使用"><span class="nav-number">3.4.</span> <span class="nav-text">AFNetworking 简单使用</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#AFURLSessionManager"><span class="nav-number">3.4.1.</span> <span class="nav-text">AFURLSessionManager</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionManagerTaskDelegate"><span class="nav-number">3.4.1.1.</span> <span class="nav-text">AFURLSessionManagerTaskDelegate</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionTaskSwizzling"><span class="nav-number">3.4.1.2.</span> <span class="nav-text">_AFURLSessionTaskSwizzling</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionManager-1"><span class="nav-number">3.4.1.3.</span> <span class="nav-text">AFURLSessionManager</span></a></li></ol></li></ol></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AFNetworking-3-2-1"><span class="nav-number">1.</span> <span class="nav-text">AFNetworking 3.2.1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSURLConnection"><span class="nav-number">2.</span> <span class="nav-text">NSURLConnection</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDelegate"><span class="nav-number">2.1.</span> <span class="nav-text">NSURLConnectionDelegate</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDataDelegate"><span class="nav-number">2.2.</span> <span class="nav-text">NSURLConnectionDataDelegate</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSURLSession"><span class="nav-number">3.</span> <span class="nav-text">NSURLSession</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLSessionConfiguration-类"><span class="nav-number">3.1.</span> <span class="nav-text">NSURLSessionConfiguration 类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLSession-类"><span class="nav-number">3.2.</span> <span class="nav-text">NSURLSession 类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking"><span class="nav-number">3.3.</span> <span class="nav-text">AFNetworking</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking-简单使用"><span class="nav-number">3.4.</span> <span class="nav-text">AFNetworking 简单使用</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#AFURLSessionManager"><span class="nav-number">3.4.1.</span> <span class="nav-text">AFURLSessionManager</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionManagerTaskDelegate"><span class="nav-number">3.4.1.1.</span> <span class="nav-text">AFURLSessionManagerTaskDelegate</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionTaskSwizzling"><span class="nav-number">3.4.1.2.</span> <span class="nav-text">_AFURLSessionTaskSwizzling</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionManager-1"><span class="nav-number">3.4.1.3.</span> <span class="nav-text">AFURLSessionManager</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFHTTPSessionManager"><span class="nav-number">3.5.</span> <span class="nav-text">AFHTTPSessionManager</span></a></li></ol></li></ol></div>
             
 
           </div>
