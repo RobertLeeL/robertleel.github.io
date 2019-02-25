@@ -112,14 +112,12 @@
 <meta property="og:site_name" content="Robert Lee">
 <meta property="og:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
-<meta property="og:image" content="http://robertleeng.com/img/NSURLSessionTask.png">
 <meta property="og:image" content="http://robertleeng.com/img/AFNetWorking.png">
-<meta property="og:updated_time" content="2019-01-03T15:09:02.163Z">
+<meta property="og:updated_time" content="2019-02-25T14:44:39.741Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
-<meta name="twitter:image" content="http://robertleeng.com/img/系统网络编程类关系.png">
+<meta name="twitter:image" content="http://robertleeng.com/img/AFNetWorking.png">
 
 
 
@@ -364,7 +362,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2019-01-03 23:09:02" itemprop="dateModified" datetime="2019-01-03T23:09:02+08:00">2019-01-03</time>
+                <time title="Modified: 2019-02-25 22:44:39" itemprop="dateModified" datetime="2019-02-25T22:44:39+08:00">2019-02-25</time>
               
             
           </span>
@@ -399,227 +397,6 @@
       
         <h3 id="AFNetworking-3-2-1"><a href="#AFNetworking-3-2-1" class="headerlink" title="AFNetworking 3.2.1"></a>AFNetworking 3.2.1</h3><p>如今使用OC进行开发iOS开发的可能都用过<a href="https://github.com/AFNetworking/AFNetworking" target="_blank" rel="noopener">AFNetworking</a>网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看<code>AFNetworking</code>是如何实现的。</p>
 <a id="more"></a>
-<hr>
-<p>在介绍<code>AFNetworking</code>之前，先看一看苹果提供的原生网络框架的使用。<br>下面这张图介绍了原生提供网络编程的类之间的关系：<br><img src="/img/系统网络编程类关系.png" alt="截图"></p>
-<p>我们首先介绍一下各个类：</p>
-<ul>
-<li>NSURL<br><code>URL</code>的全称是 <code>Uniform Resource Locator</code>意思是统一资源定位符，URL 采用 ASCII 编码格式，所以不支持如中文等非 ASCII 码字符。意思就像是人的身份证一样，可以根据身份证号码定位到一个人。</li>
-<li>NSURLRequest<br><code>NSURLRequest</code>通过一个<code>NSUR</code>L来创建一个请求对象，一个<code>NSURLRequest</code>就是一个请求。我们来看一下NSURLRequest中有哪些常用方法。</li>
-</ul>
-<pre><code>//类方法；根据一个URl创建请求，使用默认缓存NSURLRequestUseProtocolCachePolicy和默认超时相应时间60秒
-+ (instancetype)requestWithURL:(NSURL *)URL;
-
-//类方法；根据URL缓存策略和超时相应时间创建请求
-+ (instancetype)requestWithURL:(NSURL *)URL cachePolicy:(NSURLRequestCachePolicy)cachePolicy timeoutInterval:(NSTimeInterval)timeoutInterval;
-
-//实例方法；根据一个URl创建请求，使用默认缓存NSURLRequestUseProtocolCachePolicy和默认超时相应时间60秒
-- (instancetype)initWithURL:(NSURL *)URL;
-
-//实例方法；根据URL缓存策略和超时相应时间创建请求
-- (instancetype)initWithURL:(NSURL *)URL cachePolicy:(NSURLRequestCachePolicy)cachePolicy timeoutInterval:(NSTimeInterval)timeoutInterval NS_DESIGNATED_INITIALIZER;
-
-//缓存策略有如下几种：
-typedef NS_ENUM(NSUInteger, NSURLRequestCachePolicy)
-{
-//如果有缓存则进行其他操作，如果没有缓存则从服务端获取
-NSURLRequestUseProtocolCachePolicy = 0,
-
-//忽略本地缓存 直接从服务端获取
-NSURLRequestReloadIgnoringLocalCacheData = 1,
-
-//忽略本地缓存、代理服务器缓存、直接从服务器获取 目前还没有实现
-NSURLRequestReloadIgnoringLocalAndRemoteCacheData = 4, // Unimplemented
-
-//已被第二种缓存策略取代
-NSURLRequestReloadIgnoringCacheData = NSURLRequestReloadIgnoringLocalCacheData,
-
-//有缓存就用 不论失效与否 没有服务端请求
-NSURLRequestReturnCacheDataElseLoad = 2,
-
-//只加载本地缓存，没有就返回失败
-NSURLRequestReturnCacheDataDontLoad = 3,
-
-//缓存数据服务端确认有效后使用
-NSURLRequestReloadRevalidatingCacheData = 5, // Unimplemented
-};
-</code></pre><p><code>NSURLRequest</code>对象是一个请求，包含了发送给服务器的所以信息，包括：</p>
-<pre><code>//请求的方法
-@property (nullable, readonly, copy) NSString *HTTPMethod;
-
-//请求头文件
-@property (nullable, readonly, copy) NSDictionary&lt;NSString *, NSString *&gt; *allHTTPHeaderFields;
-
-//请求体
-@property (nullable, readonly, copy) NSData *HTTPBody;
-</code></pre><p>但是这些属性都是readonly的，所以<code>NSURLRequest</code>中还声明了<code>NSMutableURLRequest</code>的一个分类，这个分类中可以设置这些属性。</p>
-<hr>
-<h3 id="NSURLConnection"><a href="#NSURLConnection" class="headerlink" title="NSURLConnection"></a>NSURLConnection</h3><p><code>NSURLConnection</code>这个类以及被苹果公司废弃了，好像是在iOS9的时候废弃的，使用`NSURLSession这个类代替。在这里简单介绍一下使用方法。</p>
-<p>使用<code>NSURLConnection</code>发送一个请求大致分为三步：</p>
-<ul>
-<li>1、创建一个<code>NSURL</code>对象，设置请求的路径。</li>
-<li>2、根据<code>NSURL</code>创建一个<code>NSURLRequest</code>请求。</li>
-<li>3、使用<code>NSURLConnection</code>向服务器发送请求。</li>
-</ul>
-<p><strong>读完官方文档才知道<a href="https://developer.apple.com/documentation/foundation/nsurlconnection?language=objc" target="_blank" rel="noopener">NSURLConnection</a>真的是废弃了很多方法，那我就重新学一遍<code>NSURLConnection</code>,再回忆一下用法。</strong></p>
-<p><code>NSURLConnection</code>创建了2个分类，分别发送同步和异步请求。<br><strong>下载这两种发现在iOS9以后就被废弃了，已经被<code>NSURLSession</code>中的方法取代，但是iOS有向下兼容行，使用只会提示警告，而不是报错</strong></p>
-<pre><code>/*发送同步请求，这个会阻塞线程知道服务器返回数据为止
-*request : 请求
-*response : 付不起返回的URL响应头消息
-*error : 返回错误信息
-*/
-+ (nullable NSData *)sendSynchronousRequest:(NSURLRequest *)request returningResponse:(NSURLResponse * _Nullable * _Nullable)response error:(NSError **)error;
-
-/*异步请求，不会阻塞线程
-*queue : 异步操作队列
-*handler : 回调blog
-*/
-+ (void)sendAsynchronousRequest:(NSURLRequest*) request
-                        queue:(NSOperationQueue*) queue
-            completionHandler:(void (^)(NSURLResponse* _Nullable response, NSData* _Nullable data, NSError* _Nullable connectionError)) handle;
-
-
-NSURL *url = [NSURL URLWithString:@&quot;https://api.seniverse.com/v3/weather/now.json?key=your_api_key&amp;location=beijing&amp;language=zh-Hans&amp;unit=c&quot;];
-NSURLRequest *request = [NSURLRequest requestWithURL:url];
-NSError *error = nil;
-NSURLResponse *response = nil;
-//同步请求使用方法  
-NSData *data = [NSURLConnection sendSynchronousRequest:request returningResponse:&amp;response error:&amp;error];
-//异步请求方法
-[NSURLConnection sendAsynchronousRequest:request queue:[[NSOperationQueue alloc] init] completionHandler:^(NSURLResponse * _Nullable response, NSData * _Nullable data, NSError * _Nullable connectionError) {
-
-}];
-NSLog(@&quot;data:%@&quot;,data);
-NSLog(@&quot;error:%@&quot;,error);
-NSLog(@&quot;response:%@&quot;,response);
-//控制台打印了返回的数据和错误信息 代码太多就不写了
-</code></pre><p>**除此之外，还可以使用delegate进行数据请求。</p>
-<h4 id="NSURLConnectionDelegate"><a href="#NSURLConnectionDelegate" class="headerlink" title="NSURLConnectionDelegate"></a>NSURLConnectionDelegate</h4><pre><code>//这些代理方法 主要涉及 SSL/TSL加密的相关接口。
-//这些代理方法我都没用使用过，所以说的也不是太全面
-@protocol NSURLConnectionDelegate &lt;NSObject&gt;
-@optional
-//如果在资源加载期间发生错误，将最多调用一次。之后不会再进行其他回调，如：请求超时
-- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error;
-- (BOOL)connectionShouldUseCredentialStorage:(NSURLConnection *)connection;
-- (void)connection:(NSURLConnection *)connection willSendRequestForAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge;
-- (BOOL)connection:(NSURLConnection *)connection canAuthenticateAgainstProtectionSpace:(NSURLProtectionSpace *)protectionSpace ;
-- (void)connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge ;
-- (void)connection:(NSURLConnection *)connection didCancelAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge;
-@end
-</code></pre><p>有兴趣的可以看一下苹果官方文档： <a href="https://developer.apple.com/documentation/foundation/nsurlconnectiondelegate?language=objc" target="_blank" rel="noopener">NSURLConnectionDelegate</a></p>
-<h4 id="NSURLConnectionDataDelegate"><a href="#NSURLConnectionDataDelegate" class="headerlink" title="NSURLConnectionDataDelegate"></a>NSURLConnectionDataDelegate</h4><p>该代理监听了服务器返回的数据，继承自<code>NSURLConnectionDelegate</code>代理。这个&lt;&gt;是代理继承的意思，我也是刚知道不久。</p>
-<pre><code>@protocol NSURLConnectionDataDelegate &lt;NSURLConnectionDelegate&gt;
-@optional
-//在发送请求之前的代理方法，重定义响应的response
-- (nullable NSURLRequest *)connection:(NSURLConnection *)connection willSendRequest:(NSURLRequest *)request redirectResponse:(nullable NSURLResponse *)response;
-
-//开始接受到服务器的响应时调用
-- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response;
-
-//接受到服务器返回的数据时调用
-- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data;
-
-//发送完请求结构体是调用的数据,接受数据的过程。类似于HTTP post请求
-- (nullable NSInputStream *)connection:(NSURLConnection *)connection needNewBodyStream:(NSURLRequest *)request;
-- (void)connection:(NSURLConnection *)connection   didSendBodyData:(NSInteger)bytesWritten
-                                                 totalBytesWritten:(NSInteger)totalBytesWritten
-                                         totalBytesExpectedToWrite:(NSInteger)totalBytesExpectedToWrite;
-
-//在连接将缓存的响应存储在缓存中之前发送，以便为委托者提供更改它的机会。
-- (nullable NSCachedURLResponse *)connection:(NSURLConnection *)connection willCacheResponse:(NSCachedURLResponse *)cachedResponse;
-
-//服务器返回的数据已经完全接受时调用
-- (void)connectionDidFinishLoading:(NSURLConnection *)connection;
-</code></pre><p><code>NSURLConnection</code>类提供了3个方法。</p>
-<pre><code>//三种方法的第一个参数都是一个请求，第二个为代理，第一个方法的第三个参数表示是否立即请求，若设置为NO,则需要调用start方法
-
-- (nullable instancetype)initWithRequest:(NSURLRequest *)request delegate:(nullable id)delegate startImmediately:(BOOL)startImmediately;
-
-- (nullable instancetype)initWithRequest:(NSURLRequest *)request delegate:(nullable id)delegate;
-
-+ (nullable NSURLConnection*)connectionWithRequest:(NSURLRequest *)request delegate:(nullable id)delegate;
-</code></pre><h3 id="NSURLSession"><a href="#NSURLSession" class="headerlink" title="NSURLSession"></a>NSURLSession</h3><p><code>NSURLSession</code>是iOS7中的网络接口。它与<code>NSURLConnection</code>不同的是支持后台下载操作，以及断点续传功能。如上面的结构图所示，先来看看上面提到的类的作用</p>
-<ul>
-<li><code>NSURLSessionCofiguration</code> : 定义和配置会话，配置有：Cookie、安全性、缓存策略等等。</li>
-<li><code>NSURLSessionDataTask</code>、<code>NSURLSessionDownloadTask</code>、<code>NSURLSessionUploadTask</code> ： 主要负责处理数据的加载，和服务端之间的数据下载和上传任务。他们的<code>supreClass</code>都是<code>NSURLSessionTask</code>,<code>NSURLSessionTask</code>是一个抽象类。<br>它们之间的关系如图所示：</li>
-</ul>
-<p><img src="/img/NSURLSessionTask.png" alt="截图"></p>
-<p>从图中可以看出来，<code>NSURLSessionDataTask</code>和<code>NSURLSessionDownloadTask</code>继承自<code>NSURLSessionTask</code>，而<code>NSURLSessionUploadTask</code>继承自<code>NSURLSessionDataTask</code>。</p>
-<p><code>NSURLSessionDataTask</code>：用于处理一般的NSData类型的数据，不支持后台下载。<br><code>NSURLSessionDownloadTask</code> ： 用于下载文件，支持后台下载<br><code>NSURLSessionUploadTask</code> ： 用于PUT方法上传文件，支持后台上传。</p>
-<p>接下来让我们一个类一个类进行分析，来看看<code>NSURLSession</code>实现上传和下载。</p>
-<h4 id="NSURLSessionConfiguration-类"><a href="#NSURLSessionConfiguration-类" class="headerlink" title="NSURLSessionConfiguration 类"></a>NSURLSessionConfiguration 类</h4><p><code>NSURLSessionConfiguration</code>提供了三种方法获取获取配置实例</p>
-<pre><code>//获取默认配置，在创建默认会话时使用。
-@property (class, readonly, strong) NSURLSessionConfiguration *defaultSessionConfiguration;
-
-//获取短暂配置， 在创建短暂会话时使用，使用短暂配置就是不存储数据在磁盘上，全部数据都通过缓存保存，当会话结束时，释放
-@property (class, readonly, strong) NSURLSessionConfiguration *ephemeralSessionConfiguration;
-
-//创建后台会话配置，会话可以在后台下载上传数据 iOS8以后才可以使用
-+ (NSURLSessionConfiguration *)backgroundSessionConfigurationWithIdentifier:(NSString *)identifier;
-</code></pre><p>在<code>NSURLSessionConfiguration</code>中还定义了很多配置。包括:</p>
-<pre><code>//请求缓存策略
-@property NSURLRequestCachePolicy requestCachePolicy;
-
-//请求超时时间
-@property NSTimeInterval timeoutIntervalForRequest;
-
-//资源超时时间
-@property NSTimeInterval timeoutIntervalForResource;
-
-//网络服务类型
-@property NSURLRequestNetworkServiceType networkServiceType
-
-//是否使用蜂窝数据
-@property BOOL allowsCellularAccess;
-
-//任务等待连接成功再执行 iOS11才可以使用
-@property BOOL waitsForConnectivity;
-
-//这里就介绍这么多，后面还有设置Cookies、安全策略、网络缓存等等。我都没用过（仅仅表示我都，所以我很菜/(ㄒoㄒ)/~~），哈哈哈哈哈。所以我慢慢看，后面再补充吧。
-</code></pre><h4 id="NSURLSession-类"><a href="#NSURLSession-类" class="headerlink" title="NSURLSession 类"></a>NSURLSession 类</h4><p><code>NSURLSession</code>有三种创建方式</p>
-<pre><code>//静态创建会话 会话使用全局的cache、cookies和证书
-@property (class, readonly, strong) NSURLSession *sharedSession;
-
-//创建对应配置的会话
-+ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration;
-
-//可以定制的会话，还可以指定delegate 并设置delegate的队列
-+ (NSURLSession *)sessionWithConfiguration:(NSURLSessionConfiguration *)configuration delegate:(nullable id &lt;NSURLSessionDelegate&gt;)delegate delegateQueue:(nullable NSOperationQueue *)queue;
-</code></pre><p>在<code>NSURLSession</code>可以获得task执行会话</p>
-<pre><code>//请求走代理
-/* Creates a data task with the given request.  The request may have a body stream. */
-- (NSURLSessionDataTask *)dataTaskWithRequest:(NSURLRequest *)request;
-
-/* Creates a data task to retrieve the contents of the given URL. */
-- (NSURLSessionDataTask *)dataTaskWithURL:(NSURL *)url
-
-//请求不走代理
-- (NSURLSessionDataTask *)dataTaskWithRequest:(NSURLRequest *)request completionHandler:(void (^)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
-- (NSURLSessionDataTask *)dataTaskWithURL:(NSURL *)url completionHandler:(void (^)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
-
-//上传
-/* Creates an upload task with the given request.  The body of the request will be created from the file referenced by fileURL */
-- (NSURLSessionUploadTask *)uploadTaskWithRequest:(NSURLRequest *)request fromFile:(NSURL *)fileURL;
-
-/* Creates an upload task with the given request.  The body of the request is provided from the bodyData. */
-- (NSURLSessionUploadTask *)uploadTaskWithRequest:(NSURLRequest *)request fromData:(NSData *)bodyData;
-
-
-/*
- * upload convenience method.
- */
-- (NSURLSessionUploadTask *)uploadTaskWithRequest:(NSURLRequest *)request fromFile:(NSURL *)fileURL completionHandler:(void (^)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
-- (NSURLSessionUploadTask *)uploadTaskWithRequest:(NSURLRequest *)request fromData:(nullable NSData *)bodyData completionHandler:(void (^)(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
-
-
-//通过一个request创建下载任务
-- (NSURLSessionDownloadTask *)downloadTaskWithRequest:(NSURLRequest *)request completionHandler:(void (^)(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
-
-//通过一个URL创建下载任务
-- (NSURLSessionDownloadTask *)downloadTaskWithURL:(NSURL *)url completionHandler:(void (^)(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
-
-//实现断点续传
-- (NSURLSessionDownloadTask *)downloadTaskWithResumeData:(NSData *)resumeData completionHandler:(void (^)(NSURL * _Nullable location, NSURLResponse * _Nullable response, NSError * _Nullable error))completionHandler;
-</code></pre><p>还有NSURLSession的代理方法进行回调。这些等看完AFNetwroking之后专门写一篇文章解读一下。</p>
 <hr>
 <h4 id="AFNetworking"><a href="#AFNetworking" class="headerlink" title="AFNetworking"></a>AFNetworking</h4><p><img src="/img/AFNetWorking.png" alt="截图"></p>
 <p>从图中可以看出，AFNetWorking大致分为五个部分。</p>
@@ -1415,20 +1192,34 @@ didFinishDownloadingToURL:(NSURL *)location
     return self;
 }
 
-//设置请求格式
+//设置请求序列化
 - (void)setRequestSerializer:(AFHTTPRequestSerializer &lt;AFURLRequestSerialization&gt; *)requestSerializer {
     NSParameterAssert(requestSerializer);
 
     _requestSerializer = requestSerializer;
 }
 
-//设置请求内容类型
+//设置返回数据序列化
 - (void)setResponseSerializer:(AFHTTPResponseSerializer &lt;AFURLResponseSerialization&gt; *)responseSerializer {
     NSParameterAssert(responseSerializer);
 
     [super setResponseSerializer:responseSerializer];
 }
-</code></pre>
+</code></pre><p>还可以设置安全策略,就不在这提了,接下来我们看一下请求实现过程.</p>
+<pre><code>- (NSURLSessionDataTask *)POST:(NSString *)URLString
+                    parameters:(id)parameters
+                      progress:(void (^)(NSProgress * _Nonnull))uploadProgress
+                       success:(void (^)(NSURLSessionDataTask * _Nonnull, id _Nullable))success
+                       failure:(void (^)(NSURLSessionDataTask * _Nullable, NSError * _Nonnull))failure
+{
+    NSURLSessionDataTask *dataTask = [self dataTaskWithHTTPMethod:@&quot;POST&quot; URLString:URLString parameters:parameters uploadProgress:uploadProgress downloadProgress:nil success:success failure:failure];
+
+    [dataTask resume];
+
+    return dataTask;
+}
+</code></pre><p>首先根据参数生成一个dataTask然后在运行当前dataTask如何生成当前datatask已经在上文提打过。这里就不多介绍了。 Get、Head方法实现方式差不多这里就不过多介绍了，后面就是实现编解码和NScopying协议的方法了，就不介绍了。</p>
+
       
     </div>
 
@@ -1546,7 +1337,7 @@ didFinishDownloadingToURL:(NSURL *)location
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">12</span>
+                    <span class="site-state-item-count">13</span>
                     <span class="site-state-item-name">posts</span>
                   </a>
                 </div>
@@ -1598,7 +1389,7 @@ didFinishDownloadingToURL:(NSURL *)location
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AFNetworking-3-2-1"><span class="nav-number">1.</span> <span class="nav-text">AFNetworking 3.2.1</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSURLConnection"><span class="nav-number">2.</span> <span class="nav-text">NSURLConnection</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDelegate"><span class="nav-number">2.1.</span> <span class="nav-text">NSURLConnectionDelegate</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLConnectionDataDelegate"><span class="nav-number">2.2.</span> <span class="nav-text">NSURLConnectionDataDelegate</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSURLSession"><span class="nav-number">3.</span> <span class="nav-text">NSURLSession</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLSessionConfiguration-类"><span class="nav-number">3.1.</span> <span class="nav-text">NSURLSessionConfiguration 类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#NSURLSession-类"><span class="nav-number">3.2.</span> <span class="nav-text">NSURLSession 类</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking"><span class="nav-number">3.3.</span> <span class="nav-text">AFNetworking</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking-简单使用"><span class="nav-number">3.4.</span> <span class="nav-text">AFNetworking 简单使用</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#AFURLSessionManager"><span class="nav-number">3.4.1.</span> <span class="nav-text">AFURLSessionManager</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionManagerTaskDelegate"><span class="nav-number">3.4.1.1.</span> <span class="nav-text">AFURLSessionManagerTaskDelegate</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionTaskSwizzling"><span class="nav-number">3.4.1.2.</span> <span class="nav-text">_AFURLSessionTaskSwizzling</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionManager-1"><span class="nav-number">3.4.1.3.</span> <span class="nav-text">AFURLSessionManager</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFHTTPSessionManager"><span class="nav-number">3.5.</span> <span class="nav-text">AFHTTPSessionManager</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AFNetworking-3-2-1"><span class="nav-number">1.</span> <span class="nav-text">AFNetworking 3.2.1</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking"><span class="nav-number">1.1.</span> <span class="nav-text">AFNetworking</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking-简单使用"><span class="nav-number">1.2.</span> <span class="nav-text">AFNetworking 简单使用</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#AFURLSessionManager"><span class="nav-number">1.2.1.</span> <span class="nav-text">AFURLSessionManager</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionManagerTaskDelegate"><span class="nav-number">1.2.1.1.</span> <span class="nav-text">AFURLSessionManagerTaskDelegate</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionTaskSwizzling"><span class="nav-number">1.2.1.2.</span> <span class="nav-text">_AFURLSessionTaskSwizzling</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionManager-1"><span class="nav-number">1.2.1.3.</span> <span class="nav-text">AFURLSessionManager</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFHTTPSessionManager"><span class="nav-number">1.3.</span> <span class="nav-text">AFHTTPSessionManager</span></a></li></ol></li></ol></div>
             
 
           </div>
