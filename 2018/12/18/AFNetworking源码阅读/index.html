@@ -113,7 +113,7 @@
 <meta property="og:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://robertleeng.com/img/AFNetWorking.png">
-<meta property="og:updated_time" content="2019-02-25T14:44:39.741Z">
+<meta property="og:updated_time" content="2019-02-26T14:24:23.533Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="AFNetworking源码阅读">
 <meta name="twitter:description" content="AFNetworking 3.2.1如今使用OC进行开发iOS开发的可能都用过AFNetworking网络框架，在github上已经有3W+star,在github上OC开源库中排名第一。 接下来让我们来看看AFNetworking是如何实现的。">
@@ -362,7 +362,7 @@
                 
                   <span class="post-meta-item-text">Edited on</span>
                 
-                <time title="Modified: 2019-02-25 22:44:39" itemprop="dateModified" datetime="2019-02-25T22:44:39+08:00">2019-02-25</time>
+                <time title="Modified: 2019-02-26 22:24:23" itemprop="dateModified" datetime="2019-02-26T22:24:23+08:00">2019-02-26</time>
               
             
           </span>
@@ -1219,6 +1219,71 @@ didFinishDownloadingToURL:(NSURL *)location
     return dataTask;
 }
 </code></pre><p>首先根据参数生成一个dataTask然后在运行当前dataTask如何生成当前datatask已经在上文提打过。这里就不多介绍了。 Get、Head方法实现方式差不多这里就不过多介绍了，后面就是实现编解码和NScopying协议的方法了，就不介绍了。</p>
+<h3 id="AFURLSerialization"><a href="#AFURLSerialization" class="headerlink" title="AFURLSerialization"></a>AFURLSerialization</h3><p><code>AFURLSerialization</code>的工作是对发出的HTTP请求进行处理，<code>AFURLRequestSerialization</code>只是一个协议，主要是为<code>AFHTTPRequestSerializer</code>服务。该类的功能如下：</p>
+<ul>
+<li>1、处理查询的URL参数</li>
+<li>2、设置HTTP请求头部字段</li>
+<li>3、设置请求的参数</li>
+<li>4、分块上传</li>
+</ul>
+<h4 id="处理参数"><a href="#处理参数" class="headerlink" title="处理参数"></a>处理参数</h4><p><code>AFQueryStringPair</code>该类负责处理参数。</p>
+<pre><code>@interface AFQueryStringPair : NSObject
+@property (readwrite, nonatomic, strong) id field;
+@property (readwrite, nonatomic, strong) id value;
+
+- (instancetype)initWithField:(id)field value:(id)value;
+
+- (NSString *)URLEncodedStringValue;
+</code></pre><p><code>- (NSString *)URLEncodedStringValue;</code>方法会返回field=Value这种格式，同时在<code>AFPercentEscapedStringFromString</code>方法中对field和value进行处理，把特殊字符转义。最后在<code>AFHTTPRequestSerializer</code>类中通过<code>AFQueryStringPairsFromKeyAndValue</code>方法中，把查询参数转化为<code>para=value&amp;para=value</code>格式。</p>
+<h4 id="设置请求字段头部"><a href="#设置请求字段头部" class="headerlink" title="设置请求字段头部"></a>设置请求字段头部</h4><pre><code>- (void)setValue:(NSString *)value
+forHTTPHeaderField:(NSString *)field
+{
+    dispatch_barrier_async(self.requestHeaderModificationQueue, ^{
+        [self.mutableHTTPRequestHeaders setValue:value forKey:field];
+    });
+}
+
+- (NSString *)valueForHTTPHeaderField:(NSString *)field {
+    NSString __block *value;
+    dispatch_sync(self.requestHeaderModificationQueue, ^{
+        value = [self.mutableHTTPRequestHeaders valueForKey:field];
+    });
+    return value;
+}
+</code></pre><p>请求头部字段都会储存在<code>self.mutableHTTPRequestHeaders</code>这个可变字典中。</p>
+<pre><code>- (void)setAuthorizationHeaderFieldWithUsername:(NSString *)username
+                                       password:(NSString *)password
+{
+    NSData *basicAuthCredentials = [[NSString stringWithFormat:@&quot;%@:%@&quot;, username, password] dataUsingEncoding:NSUTF8StringEncoding];
+    NSString *base64AuthCredentials = [basicAuthCredentials base64EncodedStringWithOptions:(NSDataBase64EncodingOptions)0];
+    [self setValue:[NSString stringWithFormat:@&quot;Basic %@&quot;, base64AuthCredentials] forHTTPHeaderField:@&quot;Authorization&quot;];
+}
+</code></pre><p>还可以设置验证请求字段。</p>
+<h4 id="设置请求的参数"><a href="#设置请求的参数" class="headerlink" title="设置请求的参数"></a>设置请求的参数</h4><pre><code>@property (nonatomic, assign) BOOL allowsCellularAccess;
+
+@property (nonatomic, assign) NSURLRequestCachePolicy cachePolicy;
+
+@property (nonatomic, assign) BOOL HTTPShouldHandleCookies;
+
+@property (nonatomic, assign) BOOL HTTPShouldUsePipelining;
+
+@property (nonatomic, assign) BOOL HTTPShouldUsePipelining;
+
+@property (nonatomic, assign) NSTimeInterval timeoutInterval;
+</code></pre><p>在该类中都会添加KVO来监听这些属性的变化，当属性变化的时候会触发监听方法，在生成Request的时候进行设置。</p>
+<h4 id="分块上传"><a href="#分块上传" class="headerlink" title="分块上传"></a>分块上传</h4><p>分块上传是通过<code>AFMultipartFormData</code>协议进行上传，这里就不过多介绍了。</p>
+<h3 id="AFURLResponseSerialization"><a href="#AFURLResponseSerialization" class="headerlink" title="AFURLResponseSerialization"></a>AFURLResponseSerialization</h3><p>该协议对响应的数据进行解析，<code>AFHTTPResponseSerializer</code>、<code>AFJSONResponseSerializer</code>都遵守了该协议。</p>
+<pre><code>@protocol AFURLResponseSerialization &lt;NSObject, NSSecureCoding, NSCopying&gt;
+
+
+- (nullable id)responseObjectForResponse:(nullable NSURLResponse *)response
+                           data:(nullable NSData *)data
+                          error:(NSError * _Nullable __autoreleasing *)error NS_SWIFT_NOTHROW;
+
+@end
+</code></pre><p>遵循这个协议的类同时也要遵循 NSObject、NSSecureCoding 和 NSCopying 这三个协议，实现安全编码、拷贝以及 Objective-C 对象的基本行为。就是对返回数据的解析，这里就不过多介绍了。</p>
+<p>判断网络状态<code>AFNetworkReachabilityManager</code>,我会在后面的网站解释。这里就写到这里了。也是大致对AFnetworking有了一定的了解。</p>
+<h3 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h3><p><a href="https://draveness.me/afnetworking3#AFURLResponseSerialization" target="_blank" rel="noopener">处理请求和响应 AFURLSerialization</a></p>
 
       
     </div>
@@ -1389,7 +1454,7 @@ didFinishDownloadingToURL:(NSURL *)location
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AFNetworking-3-2-1"><span class="nav-number">1.</span> <span class="nav-text">AFNetworking 3.2.1</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking"><span class="nav-number">1.1.</span> <span class="nav-text">AFNetworking</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking-简单使用"><span class="nav-number">1.2.</span> <span class="nav-text">AFNetworking 简单使用</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#AFURLSessionManager"><span class="nav-number">1.2.1.</span> <span class="nav-text">AFURLSessionManager</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionManagerTaskDelegate"><span class="nav-number">1.2.1.1.</span> <span class="nav-text">AFURLSessionManagerTaskDelegate</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionTaskSwizzling"><span class="nav-number">1.2.1.2.</span> <span class="nav-text">_AFURLSessionTaskSwizzling</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionManager-1"><span class="nav-number">1.2.1.3.</span> <span class="nav-text">AFURLSessionManager</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFHTTPSessionManager"><span class="nav-number">1.3.</span> <span class="nav-text">AFHTTPSessionManager</span></a></li></ol></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#AFNetworking-3-2-1"><span class="nav-number">1.</span> <span class="nav-text">AFNetworking 3.2.1</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking"><span class="nav-number">1.1.</span> <span class="nav-text">AFNetworking</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFNetworking-简单使用"><span class="nav-number">1.2.</span> <span class="nav-text">AFNetworking 简单使用</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#AFURLSessionManager"><span class="nav-number">1.2.1.</span> <span class="nav-text">AFURLSessionManager</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionManagerTaskDelegate"><span class="nav-number">1.2.1.1.</span> <span class="nav-text">AFURLSessionManagerTaskDelegate</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionTaskSwizzling"><span class="nav-number">1.2.1.2.</span> <span class="nav-text">_AFURLSessionTaskSwizzling</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#AFURLSessionManager-1"><span class="nav-number">1.2.1.3.</span> <span class="nav-text">AFURLSessionManager</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AFHTTPSessionManager"><span class="nav-number">1.3.</span> <span class="nav-text">AFHTTPSessionManager</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AFURLSerialization"><span class="nav-number">2.</span> <span class="nav-text">AFURLSerialization</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#处理参数"><span class="nav-number">2.1.</span> <span class="nav-text">处理参数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#设置请求字段头部"><span class="nav-number">2.2.</span> <span class="nav-text">设置请求字段头部</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#设置请求的参数"><span class="nav-number">2.3.</span> <span class="nav-text">设置请求的参数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#分块上传"><span class="nav-number">2.4.</span> <span class="nav-text">分块上传</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AFURLResponseSerialization"><span class="nav-number">3.</span> <span class="nav-text">AFURLResponseSerialization</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考文章"><span class="nav-number">4.</span> <span class="nav-text">参考文章</span></a></li></ol></div>
             
 
           </div>
