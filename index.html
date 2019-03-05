@@ -300,6 +300,333 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://robertleeng.com/2019/03/05/学习微信小程序开发/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Robert Lee">
+      <meta itemprop="description" content="Robert Lee的博客">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Robert Lee">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                
+                <a href="/2019/03/05/学习微信小程序开发/" class="post-title-link" itemprop="http://robertleeng.com/index.html">学习微信小程序开发</a>
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+
+              
+                
+              
+
+              <time title="Created: 2019-03-05 22:12:24 / Modified: 23:19:06" itemprop="dateCreated datePublished" datetime="2019-03-05T22:12:24+08:00">2019-03-05</time>
+            
+
+            
+              
+
+              
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h3 id="第一天-微信小程序框架"><a href="#第一天-微信小程序框架" class="headerlink" title="第一天 微信小程序框架"></a>第一天 微信小程序框架</h3><h4 id="相关文件"><a href="#相关文件" class="headerlink" title="相关文件"></a>相关文件</h4><p><strong>主体文件</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">文件名</th>
+<th style="text-align:center">作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">app.js</td>
+<td style="text-align:center">主逻辑文件，用来注册小程序</td>
+</tr>
+<tr>
+<td style="text-align:center">app.json</td>
+<td style="text-align:center">主配置文件，用来对小程序进行全局配置</td>
+</tr>
+<tr>
+<td style="text-align:center">app.wxss</td>
+<td style="text-align:center">主样式表文件 设置样式</td>
+</tr>
+</tbody>
+</table>
+<p><strong>页面文件</strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">文件名</th>
+<th style="text-align:center">作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">js</td>
+<td style="text-align:center">逻辑文件，编写js语言代码</td>
+</tr>
+<tr>
+<td style="text-align:center">wxml</td>
+<td style="text-align:center">页面描述文件，设置页面的布局，进行数据绑定</td>
+</tr>
+<tr>
+<td style="text-align:center">wxss</td>
+<td style="text-align:center">主样式表文件 设置样式</td>
+</tr>
+<tr>
+<td style="text-align:center">json</td>
+<td style="text-align:center">配置文件</td>
+</tr>
+</tbody>
+</table>
+<h5 id="配置文件"><a href="#配置文件" class="headerlink" title="配置文件"></a>配置文件</h5><p>在小程序中需要使用到得页面都必须在<code>app.json</code>文件中进行配置。</p>
+<h6 id="配置状态"><a href="#配置状态" class="headerlink" title="配置状态"></a>配置状态</h6><table>
+<thead>
+<tr>
+<th style="text-align:center">属性</th>
+<th style="text-align:center">作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">backgroundColor</td>
+<td style="text-align:center">设置窗口的背景色，用RGB表示</td>
+</tr>
+<tr>
+<td style="text-align:center">backgroundTextStyle</td>
+<td style="text-align:center">设置下拉刷新字体 loading图的样式</td>
+</tr>
+<tr>
+<td style="text-align:center">enablePullDownRefresh</td>
+<td style="text-align:center">是否开启下拉刷新</td>
+</tr>
+<tr>
+<td style="text-align:center">navigationBarBackgroundColor</td>
+<td style="text-align:center">设置导航栏背景颜色</td>
+</tr>
+<tr>
+<td style="text-align:center">navigationBarTextStyle</td>
+<td style="text-align:center">设置导航栏标题颜色</td>
+</tr>
+<tr>
+<td style="text-align:center">navigationBarTitleText</td>
+<td style="text-align:center">设置导航栏标题文字</td>
+</tr>
+<tr>
+<td style="text-align:center">tabBar</td>
+<td style="text-align:center">底部Tabbar 属性就不介绍了</td>
+</tr>
+<tr>
+<td style="text-align:center">connectSocket</td>
+<td style="text-align:center">网络请求超时时间</td>
+</tr>
+<tr>
+<td style="text-align:center">downloadFile</td>
+<td style="text-align:center">下载文件超时时间</td>
+</tr>
+<tr>
+<td style="text-align:center">uploadFile</td>
+<td style="text-align:center">上传文件超时时间</td>
+</tr>
+<tr>
+<td style="text-align:center">request</td>
+<td style="text-align:center">网络请求接口超时时间</td>
+</tr>
+</tbody>
+</table>
+<h6 id="逻辑层"><a href="#逻辑层" class="headerlink" title="逻辑层"></a>逻辑层</h6><p><strong><em>生命周期函数：</em></strong></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">函数</th>
+<th style="text-align:center">时机</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">onLaunch</td>
+<td style="text-align:center">当小程序初始化完成时调用方法</td>
+</tr>
+<tr>
+<td style="text-align:center">onShow</td>
+<td style="text-align:center">小程序启动，或者从后台到前台时调用方法</td>
+</tr>
+<tr>
+<td style="text-align:center">onHide</td>
+<td style="text-align:center">当页面隐藏时调用的函数</td>
+</tr>
+<tr>
+<td style="text-align:center">onReady</td>
+<td style="text-align:center">页面初次渲染完成的时候调用该函数 只会调用一次</td>
+</tr>
+<tr>
+<td style="text-align:center">onUnload</td>
+<td style="text-align:center">页面卸载的时候调用该函数</td>
+</tr>
+<tr>
+<td style="text-align:center">onLoad</td>
+<td style="text-align:center">页面加载完成的时候调用 只会调用一次</td>
+</tr>
+<tr>
+<td style="text-align:center">onPullDownRefresh</td>
+<td style="text-align:center">下拉刷新时调用的函数</td>
+</tr>
+</tbody>
+</table>
+<h6 id="页面描述文件-wxml"><a href="#页面描述文件-wxml" class="headerlink" title="页面描述文件 wxml"></a>页面描述文件 wxml</h6><p>组件（Component）：视图的基本组成单元。</p>
+<ul>
+<li>数据绑定：</li>
+</ul>
+<pre><code>{{  }};
+</code></pre><ul>
+<li>条件渲染：</li>
+</ul>
+<pre><code>wx:if= &quot;{{ }}&quot;
+wx:elif=&quot;{{ }}&quot;
+wx:else
+</code></pre><ul>
+<li><p>block wx:if 当if为true 渲染 block中的视图，flase不渲染。</p>
+</li>
+<li><p>列表渲染</p>
+</li>
+</ul>
+<pre><code>wx:for= &quot;{{ }}&quot;
+</code></pre><ul>
+<li><strong>模块</strong></li>
+<li>定义模块</li>
+</ul>
+<pre><code>&lt;template name=&quot;&quot;&gt;&lt;/template&gt;
+</code></pre><ul>
+<li>使用模块</li>
+</ul>
+<pre><code>&lt;template is=&quot;模块名称&quot; data=&quot;{{ 传入的数据 }}&quot;&gt;
+</code></pre><ul>
+<li><p>引用其他页面的文件</p>
+<ul>
+<li>import 方式引入  </li>
+</ul>
+</li>
+</ul>
+<pre><code>&lt;import src=&quot;&quot;&gt;
+</code></pre><ul>
+<li>include 方式引入</li>
+</ul>
+<pre><code>&lt;include src=&quot;&quot;&gt;
+</code></pre><ul>
+<li><strong>页面事件</strong></li>
+</ul>
+
+          
+        
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://robertleeng.com/2019/02/25/NSURLSession使用讲解/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -2076,166 +2403,6 @@ objc_msgSend(id self, SEL op, arg1, arg2)
 
 
     
-      
-
-  
-
-  
-  
-  
-
-  
-
-  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
-  
-  
-  
-  <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://robertleeng.com/2018/12/11/markdown语法/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="name" content="Robert Lee">
-      <meta itemprop="description" content="Robert Lee的博客">
-      <meta itemprop="image" content="/images/avatar.gif">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Robert Lee">
-    </span>
-
-    
-      <header class="post-header">
-
-        
-        
-          <h1 class="post-title" itemprop="name headline">
-                
-                
-                <a href="/2018/12/11/markdown语法/" class="post-title-link" itemprop="http://robertleeng.com/index.html">markdown语法</a>
-              
-            
-          </h1>
-        
-
-        <div class="post-meta">
-          <span class="post-time">
-
-            
-            
-            
-
-            
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              
-                <span class="post-meta-item-text">Posted on</span>
-              
-
-              
-                
-              
-
-              <time title="Created: 2018-12-11 22:10:42" itemprop="dateCreated datePublished" datetime="2018-12-11T22:10:42+08:00">2018-12-11</time>
-            
-
-            
-              
-
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">Edited on</span>
-                
-                <time title="Modified: 2018-12-22 00:38:49" itemprop="dateModified" datetime="2018-12-22T00:38:49+08:00">2018-12-22</time>
-              
-            
-          </span>
-
-          
-
-          
-            
-          
-
-          
-          
-
-          
-
-          
-
-          
-
-        </div>
-      </header>
-    
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-      
-
-      
-        
-          <h1 id="markDown语法"><a href="#markDown语法" class="headerlink" title="markDown语法"></a>markDown语法</h1>
-          <!--noindex-->
-          
-            <div class="post-button text-center">
-              <a class="btn" href="/2018/12/11/markdown语法/#more" rel="contents">
-                Read more &raquo;
-              </a>
-            </div>
-         
-          <!--/noindex-->
-        
-      
-    </div>
-
-    
-
-    
-    
-    
-
-    
-
-    
-      
-    
-    
-
-    
-
-    <footer class="post-footer">
-      
-
-      
-
-      
-
-      
-      
-        <div class="post-eof"></div>
-      
-    </footer>
-  </div>
-  
-  
-  
-  </article>
-
-
-    
   </section>
 
   
@@ -2283,7 +2450,7 @@ objc_msgSend(id self, SEL op, arg1, arg2)
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">13</span>
+                    <span class="site-state-item-count">14</span>
                     <span class="site-state-item-name">posts</span>
                   </a>
                 </div>
